@@ -153,155 +153,235 @@
     </div>
 
     <script>
-        // ---------- BACKGROUND IMAGE ROTATION ----------
-        const images = [
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg"
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg"
-        ];
-        let currentImageIndex = Math.floor(Math.random() * images.length);
-        const bgDiv = document.getElementById('bg');
-        function setBackground(index) {
-            bgDiv.style.backgroundImage = `url('${images[index]}')`;
-        }
-        setBackground(currentImageIndex);
-        setInterval(() => {
-            currentImageIndex = (currentImageIndex === 0) ? 1 : 0;
-            setBackground(currentImageIndex);
-        }, 5000);
+    // ---------- STAGGERED IMAGE LOADING & ROTATION ----------
+    const imageUrls = [
+        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
+        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
+        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg"
+    ];
 
-        // ---------- RANDOM PHRASE GENERATOR & STORY ----------
-        const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
-        const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar"];
-        function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    // Track load status: each entry becomes { url, loaded, failed }
+    let imageItems = imageUrls.map(url => ({ url, loaded: false, failed: false }));
+    let loadedImages = [];          // URLs that have loaded successfully
+    let loadingQueue = [];           // indices currently being loaded
+    let currentBgIndex = -1;         // index of currently displayed image (in loadedImages)
 
-        const storyDiv = document.getElementById('story');
-        const phraseDiv = document.getElementById('phrase');
-        const maxStoryLines = 15;
-        let storyLines = [];
+    const bgDiv = document.getElementById('bg');
 
-        function addStoryLine(line) {
-            storyLines.push(line);
-            if (storyLines.length > maxStoryLines) storyLines.shift();
-            storyDiv.innerHTML = storyLines.map(text => `<div>${text}</div>`).join('');
-            storyDiv.scrollTop = storyDiv.scrollHeight;
-        }
-
-        function updatePhrase() {
-            const phrase = `${randomItem(verbs)} ${randomItem(nouns)}...`;
-            phraseDiv.innerText = phrase;
-            addStoryLine(phrase);
-        }
-        updatePhrase();
-        setInterval(updatePhrase, 1500);
-
-        // ---------- AUTO TIC‑TAC‑TOE ----------
-        const canvas = document.getElementById('tictactoe');
-        const ctx = canvas.getContext('2d');
-        let board = [['','',''],['','',''],['','','']];
-        let currentPlayer = 'X', gameOver = false, winningCombo = null;
-
-        function drawBoard() {
-            ctx.clearRect(0,0,250,250);
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 3;
-            const cellSize = 250/3;
-            for(let i=1;i<3;i++) {
-                ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,250); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(250,i*cellSize); ctx.stroke();
+    // Helper: load a single image by index, returns a promise
+    function loadImage(index) {
+        return new Promise((resolve, reject) => {
+            if (imageItems[index].loaded || imageItems[index].failed) {
+                return resolve(); // already attempted
             }
-            ctx.font = 'bold 50px "Courier New", monospace';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            for(let r=0;r<3;r++) for(let c=0;c<3;c++) {
-                if(board[r][c]==='') continue;
-                let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
-                ctx.fillStyle = board[r][c]==='X' ? '#ff5555' : '#55aaff';
-                ctx.fillText(board[r][c], x, y);
-            }
-            if(winningCombo) {
-                ctx.fillStyle = 'rgba(0,255,0,0.3)';
-                winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
-            }
-        }
-
-        function checkWin() {
-            const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
-            for(let line of lines) {
-                const [a,b,c] = line;
-                if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]) return line;
-            }
-            return null;
-        }
-
-        function isDraw() { return board.every(row => row.every(cell => cell!=='')); }
-        function resetBoard() { board = [['','',''],['','',''],['','','']]; currentPlayer='X'; gameOver=false; winningCombo=null; drawBoard(); }
-
-        function randomMove() {
-            if(gameOver) return;
-            let empty = [];
-            for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(board[r][c]==='') empty.push([r,c]);
-            if(empty.length===0) { gameOver=true; setTimeout(resetBoard,400); return; }
-            let [r,c] = empty[Math.floor(Math.random()*empty.length)];
-            board[r][c] = currentPlayer;
-            let win = checkWin();
-            if(win) { winningCombo=win; gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-            if(isDraw()) { gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-            currentPlayer = currentPlayer==='X' ? 'O' : 'X';
-            drawBoard();
-        }
-        setInterval(randomMove, 250);
-        drawBoard();
-
-        // ---------- AUDIO AUTOPLAY ----------
-        window.addEventListener('load', function() {
-            const audio = document.getElementById('bgm');
-            audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
+            const img = new Image();
+            img.onload = () => {
+                imageItems[index].loaded = true;
+                loadedImages.push(imageUrls[index]);
+                // Remove from loading queue
+                loadingQueue = loadingQueue.filter(i => i !== index);
+                resolve();
+            };
+            img.onerror = () => {
+                imageItems[index].failed = true;
+                loadingQueue = loadingQueue.filter(i => i !== index);
+                reject(new Error(`Failed to load image ${index}`));
+            };
+            img.src = imageUrls[index];
         });
+    }
 
-        // ---------- GAMEDETAILS FUNCTION (called by GMod) ----------
-        // Stores server info and builds the ticker
-        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
-            // Format the map name according to your rules
-            function formatMapName(rawMap) {
-                // Step 1: remove everything before the first underscore (including the underscore)
-                // e.g., "gm_construct" -> "construct", "gm_rusted_palace" -> "rusted_palace"
-                let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
-
-                // Step 2: replace underscores with spaces
-                let withSpaces = withoutPrefix.replace(/_/g, ' ');
-
-                // Step 3: remove numbers intelligently
-                // We want: "highway19800" -> "highway", "mansion31alpha" -> "mansion alpha"
-                // This regex splits on digits, then filters out empty strings and joins with a space
-                let parts = withSpaces.split(/(\d+)/);
-                let filtered = parts.filter(part => !/^\d+$/.test(part)); // remove purely numeric parts
-                let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
-
-                return result || "unknown map"; // fallback
+    // Load a random initial image (for immediate display)
+    async function loadInitialImage() {
+        const randomIndex = Math.floor(Math.random() * imageUrls.length);
+        try {
+            await loadImage(randomIndex);
+            // Set as background
+            currentBgIndex = loadedImages.length - 1; // last loaded is this one
+            bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+            console.log(`Initial image loaded: ${randomIndex}`);
+        } catch (e) {
+            console.warn(`Initial image ${randomIndex} failed, trying another...`);
+            // Try next one sequentially
+            for (let i = 0; i < imageUrls.length; i++) {
+                if (i !== randomIndex && !imageItems[i].loaded && !imageItems[i].failed) {
+                    try {
+                        await loadImage(i);
+                        currentBgIndex = loadedImages.length - 1;
+                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                        break;
+                    } catch (err) {
+                        continue;
+                    }
+                }
             }
+        }
+    }
 
-            let formattedMap = formatMapName(mapname);
-            let maxPlayers = maxplayers || "?";
-
-            // Build ticker text
-            let tickerText = `✦ Os's Furry Server ✦ Map: ${formattedMap} ✦ Max Players: ${maxPlayers} ✦ Gamemode: sandbox + ttt/mafia mini-gamemode ✦`;
-
-            // Update ticker content
-            let tickerContent = document.getElementById('tickerContent');
-            if (tickerContent) {
-                tickerContent.innerText = tickerText;
-
-                // Set animation duration (adjust speed as desired)
-                let duration = 25; // seconds for full scroll
-                tickerContent.style.animationDuration = duration + 's';
-
-                // Random start position: set a negative animation-delay (between 0 and duration)
-                let randomDelay = -Math.random() * duration;
-                tickerContent.style.animationDelay = randomDelay + 's';
+    // Preload the next N images that aren't loaded/failed/queued
+    async function preloadNextImages(count = 3) {
+        let loaded = 0;
+        // Start from a random point to avoid always starting at 0
+        let startIndex = Math.floor(Math.random() * imageUrls.length);
+        for (let offset = 0; offset < imageUrls.length; offset++) {
+            if (loaded >= count) break;
+            let idx = (startIndex + offset) % imageUrls.length;
+            if (!imageItems[idx].loaded && !imageItems[idx].failed && !loadingQueue.includes(idx)) {
+                loadingQueue.push(idx);
+                loadImage(idx).catch(() => {}); // silently fail, we'll try others later
+                loaded++;
             }
+        }
+    }
 
-            // Optional: you could also display max players elsewhere if desired
-        };
-    </script>
+    // Rotation function – picks a random loaded image different from current if possible
+    function rotateBackground() {
+        if (loadedImages.length === 0) return;
+        let newIndex;
+        if (loadedImages.length === 1) {
+            newIndex = 0;
+        } else {
+            do {
+                newIndex = Math.floor(Math.random() * loadedImages.length);
+            } while (newIndex === currentBgIndex);
+        }
+        currentBgIndex = newIndex;
+        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+    }
+
+    // Start the loading process
+    (async function() {
+        // 1. Load initial random image
+        await loadInitialImage();
+
+        // 2. Start preloading next 3 images
+        preloadNextImages(3);
+
+        // 3. Set up rotation every 5 seconds (only uses loaded images)
+        setInterval(rotateBackground, 5000);
+
+        // Optional: continue preloading in background periodically
+        setInterval(() => {
+            // If we have fewer than 3 images in queue and there are still unloaded ones, load more
+            let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
+            if (unloaded > 0 && loadingQueue.length < 2) {
+                preloadNextImages(2); // keep a buffer
+            }
+        }, 10000);
+    })();
+
+    // ---------- RANDOM PHRASE GENERATOR & STORY (unchanged) ----------
+    const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
+    const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar"];
+    function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    const storyDiv = document.getElementById('story');
+    const phraseDiv = document.getElementById('phrase');
+    const maxStoryLines = 15;
+    let storyLines = [];
+
+    function addStoryLine(line) {
+        storyLines.push(line);
+        if (storyLines.length > maxStoryLines) storyLines.shift();
+        storyDiv.innerHTML = storyLines.map(text => `<div>${text}</div>`).join('');
+        storyDiv.scrollTop = storyDiv.scrollHeight;
+    }
+
+    function updatePhrase() {
+        const phrase = `${randomItem(verbs)} ${randomItem(nouns)}...`;
+        phraseDiv.innerText = phrase;
+        addStoryLine(phrase);
+    }
+    updatePhrase();
+    setInterval(updatePhrase, 1500);
+
+    // ---------- AUTO TIC‑TAC‑TOE (unchanged) ----------
+    const canvas = document.getElementById('tictactoe');
+    const ctx = canvas.getContext('2d');
+    let board = [['','',''],['','',''],['','','']];
+    let currentPlayer = 'X', gameOver = false, winningCombo = null;
+
+    function drawBoard() {
+        ctx.clearRect(0,0,250,250);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        const cellSize = 250/3;
+        for(let i=1;i<3;i++) {
+            ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,250); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(250,i*cellSize); ctx.stroke();
+        }
+        ctx.font = 'bold 50px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for(let r=0;r<3;r++) for(let c=0;c<3;c++) {
+            if(board[r][c]==='') continue;
+            let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
+            ctx.fillStyle = board[r][c]==='X' ? '#ff5555' : '#55aaff';
+            ctx.fillText(board[r][c], x, y);
+        }
+        if(winningCombo) {
+            ctx.fillStyle = 'rgba(0,255,0,0.3)';
+            winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
+        }
+    }
+
+    function checkWin() {
+        const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
+        for(let line of lines) {
+            const [a,b,c] = line;
+            if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]) return line;
+        }
+        return null;
+    }
+
+    function isDraw() { return board.every(row => row.every(cell => cell!=='')); }
+    function resetBoard() { board = [['','',''],['','',''],['','','']]; currentPlayer='X'; gameOver=false; winningCombo=null; drawBoard(); }
+
+    function randomMove() {
+        if(gameOver) return;
+        let empty = [];
+        for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(board[r][c]==='') empty.push([r,c]);
+        if(empty.length===0) { gameOver=true; setTimeout(resetBoard,400); return; }
+        let [r,c] = empty[Math.floor(Math.random()*empty.length)];
+        board[r][c] = currentPlayer;
+        let win = checkWin();
+        if(win) { winningCombo=win; gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
+        if(isDraw()) { gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
+        currentPlayer = currentPlayer==='X' ? 'O' : 'X';
+        drawBoard();
+    }
+    setInterval(randomMove, 250);
+    drawBoard();
+
+    // ---------- AUDIO AUTOPLAY (unchanged) ----------
+    window.addEventListener('load', function() {
+        const audio = document.getElementById('bgm');
+        audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
+    });
+
+    // ---------- GAMEDETAILS FUNCTION (unchanged) ----------
+    window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
+        function formatMapName(rawMap) {
+            let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
+            let withSpaces = withoutPrefix.replace(/_/g, ' ');
+            let parts = withSpaces.split(/(\d+)/);
+            let filtered = parts.filter(part => !/^\d+$/.test(part));
+            let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
+            return result || "unknown map";
+        }
+
+        let formattedMap = formatMapName(mapname);
+        let maxPlayers = maxplayers || "?";
+        let tickerText = `✦ Os's Furry Server ✦ Map: ${formattedMap} ✦ Max Players: ${maxPlayers} ✦ Gamemode: sandbox + ttt/mafia mini-gamemode ✦`;
+
+        let tickerContent = document.getElementById('tickerContent');
+        if (tickerContent) {
+            tickerContent.innerText = tickerText;
+            let duration = 25;
+            tickerContent.style.animationDuration = duration + 's';
+            let randomDelay = -Math.random() * duration;
+            tickerContent.style.animationDelay = randomDelay + 's';
+        }
+    };
+</script>
 </body>
 </html>
