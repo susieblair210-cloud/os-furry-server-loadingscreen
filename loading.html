@@ -3,43 +3,41 @@
 <head>
     <style>
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            font-family: 'Courier New', monospace;
-            color: #0ff;
-            background: #000; /* fallback */
-            overflow: hidden;
-        }
-        /* Background image container – covers entire viewport */
-        #bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            transition: background-image 0.5s ease-in-out;
-            z-index: -1; /* behind everything */
-        }
-        /* Main content panel – semi‑transparent dark background for readability */
-        .content-panel {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            right: 30px;
-            background: rgba(10, 10, 10, 0.75);
-            border-radius: 16px;
-            padding: 20px 30px;
-            backdrop-filter: blur(5px);
-            border: 1px solid #333;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-            max-width: 800px;
-            margin: 0 auto;
-        }
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: 'Courier New', monospace;
+    color: #0ff;
+    background: transparent;  /* Change from #000 to transparent */
+    overflow: hidden;
+}
+#bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 0.5s ease-in-out;
+    z-index: 1;  /* Was -1, now positive so it's above body but below content */
+}
+.content-panel {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    right: 30px;
+    background: rgba(10, 10, 10, 0.75);
+    border-radius: 16px;
+    padding: 20px 30px;
+    backdrop-filter: blur(5px);
+    border: 1px solid #333;
+    max-width: 800px;
+    margin: 0 auto;
+    z-index: 2;  /* Ensure panel is above the background */
+}
         /* For larger screens, center the panel more */
         @media (min-width: 1000px) {
             .content-panel {
