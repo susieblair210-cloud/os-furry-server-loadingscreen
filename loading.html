@@ -95,30 +95,40 @@
         display: none;
     }
 
-    /* ---------- TICKER STYLES (updated) ---------- */
-    .ticker-container {
-        position: fixed;
-        top: 55px;  /* Moved up from 0 to 40px – adjust as needed */
-        left: 0;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(3px);
-        border-top: 2px solid #6a6;  /* Thicker green border */
-        border-bottom: 2px solid #6a6;
-        color: #6a6;
-        font-size: 20px;  /* Larger text */
-        padding: 10px 0;   /* Slightly taller */
-        overflow: hidden;
-        white-space: nowrap;
-        z-index: 10;
-        pointer-events: none;
-    }
-    .ticker-content {
-        display: inline-block;
-        padding-left: 100%;
-        animation: ticker linear infinite;
-        will-change: transform;
-    }
+    /* ---------- TICKER STYLES (static, cycling) ---------- */
+.ticker-container {
+    position: fixed;
+    top: 55px;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    border-top: 2px solid #6a6;
+    border-bottom: 2px solid #6a6;
+    color: #6a6;
+    font-size: 22px;
+    padding: 12px 0;
+    z-index: 10;
+    pointer-events: none;
+    text-align: center;
+    overflow: hidden;          /* prevents any accidental overflow */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.ticker-message {
+    display: inline-block;
+    padding: 0 20px;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    white-space: nowrap;
+}
+
+/* Optional: add a max-width to ensure long messages don't stretch too far */
+.ticker-message {
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;   /* just in case, but we'll keep messages short */
+}
     @keyframes ticker {
         0% { transform: translateX(0); }
         100% { transform: translateX(-100%); }
@@ -153,56 +163,45 @@
     </div>
 
     <script>
-    // ---------- STAGGERED IMAGE LOADING & ROTATION ----------
+    // ---------- STAGGERED IMAGE LOADING (unchanged) ----------
     const imageUrls = [
         "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
         "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
         "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg"
     ];
 
-    // Track load status: each entry becomes { url, loaded, failed }
     let imageItems = imageUrls.map(url => ({ url, loaded: false, failed: false }));
-    let loadedImages = [];          // URLs that have loaded successfully
-    let loadingQueue = [];           // indices currently being loaded
-    let currentBgIndex = -1;         // index of currently displayed image (in loadedImages)
-
+    let loadedImages = [];
+    let loadingQueue = [];
+    let currentBgIndex = -1;
     const bgDiv = document.getElementById('bg');
 
-    // Helper: load a single image by index, returns a promise
     function loadImage(index) {
         return new Promise((resolve, reject) => {
-            if (imageItems[index].loaded || imageItems[index].failed) {
-                return resolve(); // already attempted
-            }
+            if (imageItems[index].loaded || imageItems[index].failed) return resolve();
             const img = new Image();
             img.onload = () => {
                 imageItems[index].loaded = true;
                 loadedImages.push(imageUrls[index]);
-                // Remove from loading queue
                 loadingQueue = loadingQueue.filter(i => i !== index);
                 resolve();
             };
             img.onerror = () => {
                 imageItems[index].failed = true;
                 loadingQueue = loadingQueue.filter(i => i !== index);
-                reject(new Error(`Failed to load image ${index}`));
+                reject();
             };
             img.src = imageUrls[index];
         });
     }
 
-    // Load a random initial image (for immediate display)
     async function loadInitialImage() {
         const randomIndex = Math.floor(Math.random() * imageUrls.length);
         try {
             await loadImage(randomIndex);
-            // Set as background
-            currentBgIndex = loadedImages.length - 1; // last loaded is this one
+            currentBgIndex = loadedImages.length - 1;
             bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-            console.log(`Initial image loaded: ${randomIndex}`);
         } catch (e) {
-            console.warn(`Initial image ${randomIndex} failed, trying another...`);
-            // Try next one sequentially
             for (let i = 0; i < imageUrls.length; i++) {
                 if (i !== randomIndex && !imageItems[i].loaded && !imageItems[i].failed) {
                     try {
@@ -210,65 +209,65 @@
                         currentBgIndex = loadedImages.length - 1;
                         bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
                         break;
-                    } catch (err) {
-                        continue;
-                    }
+                    } catch (err) { continue; }
                 }
             }
         }
     }
 
-    // Preload the next N images that aren't loaded/failed/queued
     async function preloadNextImages(count = 3) {
         let loaded = 0;
-        // Start from a random point to avoid always starting at 0
         let startIndex = Math.floor(Math.random() * imageUrls.length);
         for (let offset = 0; offset < imageUrls.length; offset++) {
             if (loaded >= count) break;
             let idx = (startIndex + offset) % imageUrls.length;
             if (!imageItems[idx].loaded && !imageItems[idx].failed && !loadingQueue.includes(idx)) {
                 loadingQueue.push(idx);
-                loadImage(idx).catch(() => {}); // silently fail, we'll try others later
+                loadImage(idx).catch(() => {});
                 loaded++;
             }
         }
     }
 
-    // Rotation function – picks a random loaded image different from current if possible
     function rotateBackground() {
         if (loadedImages.length === 0) return;
         let newIndex;
-        if (loadedImages.length === 1) {
-            newIndex = 0;
-        } else {
-            do {
-                newIndex = Math.floor(Math.random() * loadedImages.length);
-            } while (newIndex === currentBgIndex);
-        }
+        if (loadedImages.length === 1) newIndex = 0;
+        else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
         currentBgIndex = newIndex;
         bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
     }
 
-    // Start the loading process
     (async function() {
-        // 1. Load initial random image
         await loadInitialImage();
-
-        // 2. Start preloading next 3 images
         preloadNextImages(3);
-
-        // 3. Set up rotation every 5 seconds (only uses loaded images)
         setInterval(rotateBackground, 5000);
-
-        // Optional: continue preloading in background periodically
         setInterval(() => {
-            // If we have fewer than 3 images in queue and there are still unloaded ones, load more
             let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
-            if (unloaded > 0 && loadingQueue.length < 2) {
-                preloadNextImages(2); // keep a buffer
-            }
+            if (unloaded > 0 && loadingQueue.length < 2) preloadNextImages(2);
         }, 10000);
     })();
+
+    // ---------- TICKER MESSAGE CYCLE ----------
+    let tickerMessages = [
+        "✦ Os's Furry Server ✦",
+        "Map: loading...",
+        "Max Players: ?",
+        "Gamemode: sandbox + ttt/mafia"
+    ];
+    let currentMessageIndex = 0;
+    const tickerElement = document.getElementById('tickerMessage');
+
+    function rotateTickerMessage() {
+        if (!tickerElement) return;
+        tickerElement.style.opacity = '0';
+        setTimeout(() => {
+            currentMessageIndex = (currentMessageIndex + 1) % tickerMessages.length;
+            tickerElement.textContent = tickerMessages[currentMessageIndex];
+            tickerElement.style.opacity = '1';
+        }, 300);
+    }
+    setInterval(rotateTickerMessage, 7000);
 
     // ---------- RANDOM PHRASE GENERATOR & STORY (unchanged) ----------
     const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
@@ -358,7 +357,7 @@
         audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
     });
 
-    // ---------- GAMEDETAILS FUNCTION (unchanged) ----------
+    // ---------- GAMEDETAILS FUNCTION (updated) ----------
     window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
         function formatMapName(rawMap) {
             let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
@@ -371,15 +370,12 @@
 
         let formattedMap = formatMapName(mapname);
         let maxPlayers = maxplayers || "?";
-        let tickerText = `✦ Os's Furry Server ✦ Map: ${formattedMap} ✦ Max Players: ${maxPlayers} ✦ Gamemode: sandbox + ttt/mafia mini-gamemode ✦`;
 
-        let tickerContent = document.getElementById('tickerContent');
-        if (tickerContent) {
-            tickerContent.innerText = tickerText;
-            let duration = 25;
-            tickerContent.style.animationDuration = duration + 's';
-            let randomDelay = -Math.random() * duration;
-            tickerContent.style.animationDelay = randomDelay + 's';
+        tickerMessages[1] = `Map: ${formattedMap}`;
+        tickerMessages[2] = `Max Players: ${maxPlayers}`;
+
+        if (currentMessageIndex === 1 || currentMessageIndex === 2) {
+            tickerElement.textContent = tickerMessages[currentMessageIndex];
         }
     };
 </script>
