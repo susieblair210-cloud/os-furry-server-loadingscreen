@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Courier New', monospace;
+            color: #0ff;
+            background: #000; /* fallback */
+            overflow: hidden;
+        }
+        /* Background image container – covers entire viewport */
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+            z-index: -1; /* behind everything */
+        }
+        /* Main content panel – semi‑transparent dark background for readability */
+        .content-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            background: rgba(10, 10, 10, 0.75);
+            border-radius: 16px;
+            padding: 20px 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        /* For larger screens, center the panel more */
+        @media (min-width: 1000px) {
+            .content-panel {
+                left: 50%;
+                transform: translateX(-50%);
+                right: auto;
+                width: 800px;
+            }
+        }
+        .loading-text {
+            font-size: 20px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+        .current-phrase {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+            min-height: 70px;
+            margin-bottom: 15px;
+        }
+        .story-panel {
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 15px;
+            color: #ccc;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            margin-bottom: 15px;
+        }
+        .story-panel div {
+            margin-bottom: 6px;
+            border-left: 3px solid #ffaa00;
+            padding-left: 10px;
+        }
+        .board-container {
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            width: 250px;
+            height: 250px;
+        }
+        /* Hide audio controls – we just want background music */
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background image layer -->
+    <div id="bg"></div>
+
+    <!-- Audio player (hidden) -->
+    <audio id="bgm" loop autoplay>
+        <source src="https://drive.google.com/uc?export=download&id=1XyUfbm9T5Itb5PaDSBsrb3ouTiosrhA7" type="audio/mpeg">
+        Your browser does not support audio.
+    </audio>
+
+    <!-- Main content panel (overlay) -->
+    <div class="content-panel">
+        <div class="loading-text">GMod is loading...</div>
+        <div class="current-phrase" id="phrase">initializing...</div>
+
+        <div class="story-panel" id="story">
+            <!-- Story entries will appear here -->
+        </div>
+
+        <div class="board-container">
+            <canvas id="tictactoe" width="250" height="250"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // ---------- BACKGROUND IMAGE ROTATION ----------
+        // Direct Google Drive image links (raw)
+        const images = [
+            "https://files.catbox.moe/kz104y.jpg", // first image
+            "https://drive.google.com/uc?export=view&id=1yiTWtEj2rDd5fcDCsCOIutRRdaluZmO4"  // second image
+        ];
+
+        let currentImageIndex = Math.floor(Math.random() * images.length); // random start
+        const bgDiv = document.getElementById('bg');
+
+        function setBackground(index) {
+            bgDiv.style.backgroundImage = `url('${images[index]}')`;
+        }
+
+        // Set initial background
+        setBackground(currentImageIndex);
+
+        // Switch to the other image every 5 seconds
+        setInterval(() => {
+            currentImageIndex = (currentImageIndex === 0) ? 1 : 0; // toggle
+            setBackground(currentImageIndex);
+        }, 5000);
+
+        // ---------- RANDOM PHRASE GENERATOR & STORY BUILDER ----------
+        const verbs = [
+            "lifting", "carrying", "throwing", "eating", "petting",
+            "running over", "dancing with", "photographing", "feeding",
+            "tickling", "worshipping", "fighting", "marrying", "betraying"
+        ];
+        const nouns = [
+            "your mom", "carl weezer", "a fursuit", "G-Man", "the combine",
+            "a toilet", "Gordon Freeman", "a lambda logo", "the gravity gun",
+            "a headcrab", "a barnacle", "the admin", "a prop", "the void",
+            "your sanity", "a sock", "a crowbar"
+        ];
+
+        function randomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        const storyDiv = document.getElementById('story');
+        const phraseDiv = document.getElementById('phrase');
+
+        const maxStoryLines = 15;
+        let storyLines = [];
+
+        function addStoryLine(line) {
+            storyLines.push(line);
+            if (storyLines.length > maxStoryLines) {
+                storyLines.shift();
+            }
+            storyDiv.innerHTML = storyLines.map(text => `<div>${text}</div>`).join('');
+            storyDiv.scrollTop = storyDiv.scrollHeight;
+        }
+
+        function updatePhrase() {
+            const verb = randomItem(verbs);
+            const noun = randomItem(nouns);
+            const phrase = `${verb} ${noun}...`;
+            phraseDiv.innerText = phrase;
+            addStoryLine(phrase);
+        }
+
+        updatePhrase();
+        setInterval(updatePhrase, 1500);
+
+        // ---------- AUTO TIC‑TAC‑TOE (slightly adjusted for smaller canvas) ----------
+        const canvas = document.getElementById('tictactoe');
+        const ctx = canvas.getContext('2d');
+
+        let board = [
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', '']
+        ];
+        let currentPlayer = 'X';
+        let gameOver = false;
+        let winningCombo = null;
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, 250, 250); // canvas is now 250x250
+
+            // Draw grid lines (scaled)
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            const cellSize = 250 / 3;
+            for (let i = 1; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, 250);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(250, i * cellSize);
+                ctx.stroke();
+            }
+
+            // Draw X and O (font size scaled)
+            ctx.font = 'bold 50px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    const cell = board[row][col];
+                    if (cell === '') continue;
+
+                    const x = col * cellSize + cellSize / 2;
+                    const y = row * cellSize + cellSize / 2;
+
+                    if (cell === 'X') {
+                        ctx.fillStyle = '#ff5555';
+                        ctx.fillText('X', x, y);
+                    } else {
+                        ctx.fillStyle = '#55aaff';
+                        ctx.fillText('O', x, y);
+                    }
+                }
+            }
+
+            if (winningCombo) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                winningCombo.forEach(([row, col]) => {
+                    ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                });
+            }
+        }
+
+        function checkWin() {
+            const lines = [
+                [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
+                [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]],
+                [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]
+            ];
+            for (let line of lines) {
+                const [a, b, c] = line;
+                if (board[a[0]][a[1]] !== '' &&
+                    board[a[0]][a[1]] === board[b[0]][b[1]] &&
+                    board[a[0]][a[1]] === board[c[0]][c[1]]) {
+                    return line;
+                }
+            }
+            return null;
+        }
+
+        function isDraw() {
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    if (board[row][col] === '') return false;
+                }
+            }
+            return true;
+        }
+
+        function resetBoard() {
+            board = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ];
+            currentPlayer = 'X';
+            gameOver = false;
+            winningCombo = null;
+            drawBoard();
+        }
+
+        function randomMove() {
+            if (gameOver) return;
+
+            const empty = [];
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    if (board[row][col] === '') empty.push([row, col]);
+                }
+            }
+
+            if (empty.length === 0) {
+                gameOver = true;
+                setTimeout(resetBoard, 400);
+                return;
+            }
+
+            const [row, col] = empty[Math.floor(Math.random() * empty.length)];
+            board[row][col] = currentPlayer;
+
+            const win = checkWin();
+            if (win) {
+                winningCombo = win;
+                gameOver = true;
+                drawBoard();
+                setTimeout(resetBoard, 400);
+                return;
+            }
+
+            if (isDraw()) {
+                gameOver = true;
+                drawBoard();
+                setTimeout(resetBoard, 400);
+                return;
+            }
+
+            currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+            drawBoard();
+        }
+
+        setInterval(randomMove, 250);
+        drawBoard();
+
+        // ---------- AUDIO: ensure autoplay works (some browsers need a user gesture) ----------
+        // GMod's CEF usually allows autoplay, but if not, this attempts to play after any click.
+        // We'll also add a silent fallback.
+        window.addEventListener('load', function() {
+            const audio = document.getElementById('bgm');
+            audio.play().catch(e => {
+                console.log('Autoplay failed – user interaction may be needed.');
+                // Could add a tiny mute/unmute button, but we'll keep it clean.
+            });
+        });
+    </script>
+</body>
+</html>
