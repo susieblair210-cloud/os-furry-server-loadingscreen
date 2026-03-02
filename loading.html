@@ -2,439 +2,363 @@
 <html>
 <head>
     <style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        font-family: 'Courier New', monospace;
-        color: #6a6;  /* Changed from cyan (#0ff) to grey-green */
-        background: transparent;
-        overflow: hidden;
-    }
-    #bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        transition: background-image 0.5s ease-in-out;
-        z-index: 1;
-    }
-    .content-panel {
-        position: absolute;
-        bottom: 30px;
-        left: 30px;
-        right: 30px;
-        background: rgba(10, 10, 10, 0.75);
-        border-radius: 16px;
-        padding: 20px 30px;
-        backdrop-filter: blur(5px);
-        border: 1px solid #6a6;  /* Green border */
-        max-width: 800px;
-        margin: 0 auto;
-        z-index: 2;
-    }
-    @media (min-width: 1000px) {
-        .content-panel {
-            left: 50%;
-            transform: translateX(-50%);
-            right: auto;
-            width: 800px;
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Courier New', monospace;
+            color: #6a6;
+            background: transparent;
+            overflow: hidden;
         }
-    }
-    .loading-text {
-        font-size: 20px;
-        color: #8a8;  /* Lighter grey-green */
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        margin-bottom: 10px;
-    }
-    .current-phrase {
-        font-size: 32px;
-        font-weight: bold;
-        color: #ffaa00;  /* Keep orange for contrast */
-        text-shadow: 0 0 10px #ffaa00;
-        min-height: 70px;
-        margin-bottom: 15px;
-    }
-    .story-panel {
-        background: #111;
-        border: 2px solid #6a6;  /* Green border */
-        border-radius: 8px;
-        padding: 15px;
-        height: 200px;
-        overflow-y: auto;
-        text-align: left;
-        font-size: 15px;
-        color: #ccc;
-        line-height: 1.5;
-        scroll-behavior: smooth;
-        margin-bottom: 15px;
-    }
-    .story-panel div {
-        margin-bottom: 6px;
-        border-left: 3px solid #6a6;  /* Green accent */
-        padding-left: 10px;
-    }
-    .board-container {
-        display: flex;
-        justify-content: center;
-    }
-    canvas {
-        background: #1a1a1a;
-        border: 2px solid #6a6;  /* Green border */
-        border-radius: 8px;
-        width: 250px;
-        height: 250px;
-    }
-    audio {
-        display: none;
-    }
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+            z-index: 1;
+        }
+        .content-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            background: rgba(10, 10, 10, 0.75);
+            border-radius: 16px;
+            padding: 20px 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid #6a6;
+            max-width: 800px;
+            margin: 0 auto;
+            z-index: 2;
+        }
+        @media (min-width: 1000px) {
+            .content-panel {
+                left: 50%;
+                transform: translateX(-50%);
+                right: auto;
+                width: 800px;
+            }
+        }
+        .loading-text {
+            font-size: 20px;
+            color: #8a8;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+        .current-phrase {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+            min-height: 70px;
+            margin-bottom: 15px;
+        }
+        .story-panel {
+            background: #111;
+            border: 2px solid #6a6;
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 15px;
+            color: #ccc;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            margin-bottom: 15px;
+        }
+        .story-panel div {
+            margin-bottom: 6px;
+            border-left: 3px solid #6a6;
+            padding-left: 10px;
+        }
+        .board-container {
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            background: #1a1a1a;
+            border: 2px solid #6a6;
+            border-radius: 8px;
+            width: 250px;
+            height: 250px;
+        }
+        audio {
+            display: none;
+        }
 
-    /* ---------- TICKER STYLES (static, cycling) ---------- */
-.ticker-container {
-    position: fixed;
-    top: 55px;
-    left: 0;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(3px);
-    border-top: 2px solid #6a6;
-    border-bottom: 2px solid #6a6;
-    color: #6a6;
-    font-size: 22px;
-    padding: 12px 0;
-    z-index: 10;
-    pointer-events: none;
-    text-align: center;
-    overflow: hidden;          /* prevents any accidental overflow */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-}
-
-.ticker-message {
-    display: inline-block;
-    padding: 0 20px;
-    opacity: 1;
-    transition: opacity 0.5s ease-in-out;
-    white-space: nowrap;
-}
-
-/* Optional: add a max-width to ensure long messages don't stretch too far */
-.ticker-message {
-    max-width: 90%;
-    overflow: hidden;
-    text-overflow: ellipsis;   /* just in case, but we'll keep messages short */
-}
-    @keyframes ticker {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-100%); }
-    }
-</style>
+        /* ---------- TICKER STYLES ---------- */
+        .ticker-container {
+            position: fixed;
+            top: 55px;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
+            border-top: 2px solid #6a6;
+            border-bottom: 2px solid #6a6;
+            color: #6a6;
+            font-size: 22px;
+            padding: 12px 0;
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .ticker-message {
+            display: inline-block;
+            padding: 0 20px;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+            white-space: nowrap;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
 </head>
 <body>
-    <!-- Background image layer -->
     <div id="bg"></div>
 
-    <!-- Audio player (hidden) -->
     <audio id="bgm" loop autoplay>
         <source src="https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/in-waiting-for-miracle-438841.mp3" type="audio/mpeg">
         Your browser does not support audio.
     </audio>
 
-    <!-- Ticker (static, messages cycle) -->
-<div class="ticker-container" id="tickerContainer">
-    <div class="ticker-message" id="tickerMessage">✦ Os's Furry Server ✦</div>
-</div>
+    <div class="ticker-container" id="tickerContainer">
+        <div class="ticker-message" id="tickerMessage">✦ Os's Furry Server ✦</div>
+    </div>
 
-    <!-- Main content panel -->
     <div class="content-panel">
         <div class="loading-text">Os's Furry Server is loading...</div>
         <div class="current-phrase" id="phrase">initializing...</div>
-
         <div class="story-panel" id="story"></div>
-
         <div class="board-container">
             <canvas id="tictactoe" width="250" height="250"></canvas>
         </div>
     </div>
 
     <script>
-    // ---------- STAGGERED IMAGE LOADING (unchanged) ----------
-    const imageUrls = [
-        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
-        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
-        "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg"
-    ];
+        // ---------- STAGGERED IMAGE LOADING ----------
+        const imageUrls = [
+            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
+            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
+            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg"
+        ];
 
-    let imageItems = imageUrls.map(url => ({ url, loaded: false, failed: false }));
-    let loadedImages = [];
-    let loadingQueue = [];
-    let currentBgIndex = -1;
-    const bgDiv = document.getElementById('bg');
+        let imageItems = imageUrls.map(url => ({ url, loaded: false, failed: false }));
+        let loadedImages = [];
+        let loadingQueue = [];
+        let currentBgIndex = -1;
+        const bgDiv = document.getElementById('bg');
 
-    function loadImage(index) {
-        return new Promise((resolve, reject) => {
-            if (imageItems[index].loaded || imageItems[index].failed) return resolve();
-            const img = new Image();
-            img.onload = () => {
-                imageItems[index].loaded = true;
-                loadedImages.push(imageUrls[index]);
-                loadingQueue = loadingQueue.filter(i => i !== index);
-                resolve();
-            };
-            img.onerror = () => {
-                imageItems[index].failed = true;
-                loadingQueue = loadingQueue.filter(i => i !== index);
-                reject();
-            };
-            img.src = imageUrls[index];
-        });
-    }
+        function loadImage(index) {
+            return new Promise((resolve, reject) => {
+                if (imageItems[index].loaded || imageItems[index].failed) return resolve();
+                const img = new Image();
+                img.onload = () => {
+                    imageItems[index].loaded = true;
+                    loadedImages.push(imageUrls[index]);
+                    loadingQueue = loadingQueue.filter(i => i !== index);
+                    resolve();
+                };
+                img.onerror = () => {
+                    imageItems[index].failed = true;
+                    loadingQueue = loadingQueue.filter(i => i !== index);
+                    reject();
+                };
+                img.src = imageUrls[index];
+            });
+        }
 
-    async function loadInitialImage() {
-        const randomIndex = Math.floor(Math.random() * imageUrls.length);
-        try {
-            await loadImage(randomIndex);
-            currentBgIndex = loadedImages.length - 1;
+        async function loadInitialImage() {
+            const randomIndex = Math.floor(Math.random() * imageUrls.length);
+            try {
+                await loadImage(randomIndex);
+                currentBgIndex = loadedImages.length - 1;
+                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+            } catch (e) {
+                for (let i = 0; i < imageUrls.length; i++) {
+                    if (i !== randomIndex && !imageItems[i].loaded && !imageItems[i].failed) {
+                        try {
+                            await loadImage(i);
+                            currentBgIndex = loadedImages.length - 1;
+                            bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                            break;
+                        } catch (err) { continue; }
+                    }
+                }
+            }
+        }
+
+        async function preloadNextImages(count = 3) {
+            let loaded = 0;
+            let startIndex = Math.floor(Math.random() * imageUrls.length);
+            for (let offset = 0; offset < imageUrls.length; offset++) {
+                if (loaded >= count) break;
+                let idx = (startIndex + offset) % imageUrls.length;
+                if (!imageItems[idx].loaded && !imageItems[idx].failed && !loadingQueue.includes(idx)) {
+                    loadingQueue.push(idx);
+                    loadImage(idx).catch(() => {});
+                    loaded++;
+                }
+            }
+        }
+
+        function rotateBackground() {
+            if (loadedImages.length === 0) return;
+            let newIndex;
+            if (loadedImages.length === 1) newIndex = 0;
+            else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
+            currentBgIndex = newIndex;
             bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-        } catch (e) {
-            for (let i = 0; i < imageUrls.length; i++) {
-                if (i !== randomIndex && !imageItems[i].loaded && !imageItems[i].failed) {
-                    try {
-                        await loadImage(i);
-                        currentBgIndex = loadedImages.length - 1;
-                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-                        break;
-                    } catch (err) { continue; }
-                }
+        }
+
+        (async function() {
+            await loadInitialImage();
+            preloadNextImages(3);
+            setInterval(rotateBackground, 5000);
+            setInterval(() => {
+                let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
+                if (unloaded > 0 && loadingQueue.length < 2) preloadNextImages(2);
+            }, 10000);
+        })();
+
+        // ---------- TICKER MESSAGE CYCLE ----------
+        let tickerMessages = [
+            "✦ Os's Furry Server ✦",
+            "Map: loading...",
+            "Gamemode: sandbox + ttt/mafia"
+        ];
+        let currentMessageIndex = 0;
+        const tickerElement = document.getElementById('tickerMessage');
+
+        function rotateTickerMessage() {
+            if (!tickerElement) return;
+            tickerElement.style.opacity = '0';
+            setTimeout(() => {
+                currentMessageIndex = (currentMessageIndex + 1) % tickerMessages.length;
+                tickerElement.textContent = tickerMessages[currentMessageIndex];
+                tickerElement.style.opacity = '1';
+            }, 300);
+        }
+        setInterval(rotateTickerMessage, 7000);
+
+        // ---------- RANDOM PHRASE GENERATOR & STORY ----------
+        const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
+        const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar"];
+        function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        const storyDiv = document.getElementById('story');
+        const phraseDiv = document.getElementById('phrase');
+        const maxStoryLines = 15;
+        let storyLines = [];
+
+        function addStoryLine(line) {
+            storyLines.push(line);
+            if (storyLines.length > maxStoryLines) storyLines.shift();
+            storyDiv.innerHTML = storyLines.map(text => `<div>${text}</div>`).join('');
+            storyDiv.scrollTop = storyDiv.scrollHeight;
+        }
+
+        function updatePhrase() {
+            const phrase = `${randomItem(verbs)} ${randomItem(nouns)}...`;
+            phraseDiv.innerText = phrase;
+            addStoryLine(phrase);
+        }
+        updatePhrase();
+        setInterval(updatePhrase, 1500);
+
+        // ---------- AUTO TIC‑TAC‑TOE ----------
+        const canvas = document.getElementById('tictactoe');
+        const ctx = canvas.getContext('2d');
+        let board = [['','',''],['','',''],['','','']];
+        let currentPlayer = 'X', gameOver = false, winningCombo = null;
+
+        function drawBoard() {
+            ctx.clearRect(0,0,250,250);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            const cellSize = 250/3;
+            for(let i=1;i<3;i++) {
+                ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,250); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(250,i*cellSize); ctx.stroke();
+            }
+            ctx.font = 'bold 50px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for(let r=0;r<3;r++) for(let c=0;c<3;c++) {
+                if(board[r][c]==='') continue;
+                let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
+                ctx.fillStyle = board[r][c]==='X' ? '#ff5555' : '#55aaff';
+                ctx.fillText(board[r][c], x, y);
+            }
+            if(winningCombo) {
+                ctx.fillStyle = 'rgba(0,255,0,0.3)';
+                winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
             }
         }
-    }
 
-    async function preloadNextImages(count = 3) {
-        let loaded = 0;
-        let startIndex = Math.floor(Math.random() * imageUrls.length);
-        for (let offset = 0; offset < imageUrls.length; offset++) {
-            if (loaded >= count) break;
-            let idx = (startIndex + offset) % imageUrls.length;
-            if (!imageItems[idx].loaded && !imageItems[idx].failed && !loadingQueue.includes(idx)) {
-                loadingQueue.push(idx);
-                loadImage(idx).catch(() => {});
-                loaded++;
+        function checkWin() {
+            const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
+            for(let line of lines) {
+                const [a,b,c] = line;
+                if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]) return line;
             }
-        }
-    }
-
-    function rotateBackground() {
-        if (loadedImages.length === 0) return;
-        let newIndex;
-        if (loadedImages.length === 1) newIndex = 0;
-        else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
-        currentBgIndex = newIndex;
-        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-    }
-
-    (async function() {
-        await loadInitialImage();
-        preloadNextImages(3);
-        setInterval(rotateBackground, 5000);
-        setInterval(() => {
-            let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
-            if (unloaded > 0 && loadingQueue.length < 2) preloadNextImages(2);
-        }, 10000);
-    })();
-
-    // ---------- TICKER MESSAGE CYCLE ----------
-    let tickerMessages = [
-    "✦ Os's Furry Server ✦",
-    "Map: loading...",
-    "👥 Players: ?/?",
-    "📋 Online: Fetching...",
-    "Gamemode: sandbox + ttt/mafia"
-];
-    let currentMessageIndex = 0;
-    const tickerElement = document.getElementById('tickerMessage');
-
-    function rotateTickerMessage() {
-        if (!tickerElement) return;
-        tickerElement.style.opacity = '0';
-        setTimeout(() => {
-            currentMessageIndex = (currentMessageIndex + 1) % tickerMessages.length;
-            tickerElement.textContent = tickerMessages[currentMessageIndex];
-            tickerElement.style.opacity = '1';
-        }, 300);
-    }
-    setInterval(rotateTickerMessage, 7000);
-
-        // ---------- FETCH PLAYER DATA FROM SUPABASE ----------
-const supabaseUrl = 'https://lzossmtjpntojnlhdohn.supabase.co';
-const supabaseKey = 'sb_publishable_tP8MzhYGklq_IM0SueM2Jw_WUrh3JHO';
-
-async function fetchPlayerData() {
-    try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/server_data?order=timestamp.desc&limit=1`, {
-            headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`
-            }
-        });
-        const data = await response.json();
-
-        if (data && data.length > 0) {
-            const latest = data[0];
-            const now = Math.floor(Date.now() / 1000); // current time in seconds
-            const fiveMinutes = 5 * 60;
-            
-            // If data is older than 5 minutes, treat as stale
-            if (now - latest.timestamp > fiveMinutes) {
-                tickerMessages[2] = `👥 Players: No recent data`;
-                tickerMessages[3] = `📋 Online: (server starting?)`;
-            } else {
-                const playerCount = latest.player_count || 0;
-                const maxPlayers = latest.max_players || 32;
-                const namesString = latest.player_names || '';
-                const playerNames = namesString ? namesString.split('|') : [];
-
-                tickerMessages[2] = `👥 Players: ${playerCount}/${maxPlayers}`;
-
-                if (playerNames.length > 0) {
-                    let namesList = playerNames.join(', ');
-                    if (namesList.length > 45) namesList = namesList.substring(0, 42) + '...';
-                    tickerMessages[3] = `📋 Online: ${namesList}`;
-                } else {
-                    tickerMessages[3] = `📋 Online: No players`;
-                }
-            }
-        } else {
-            // No data at all
-            tickerMessages[2] = `👥 Players: No data`;
-            tickerMessages[3] = `📋 Online: (server offline?)`;
+            return null;
         }
 
-        // Update display if current message is one of these
-        if (currentMessageIndex === 2 || currentMessageIndex === 3) {
-            tickerElement.textContent = tickerMessages[currentMessageIndex];
+        function isDraw() { return board.every(row => row.every(cell => cell!=='')); }
+        function resetBoard() { board = [['','',''],['','',''],['','','']]; currentPlayer='X'; gameOver=false; winningCombo=null; drawBoard(); }
+
+        function randomMove() {
+            if(gameOver) return;
+            let empty = [];
+            for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(board[r][c]==='') empty.push([r,c]);
+            if(empty.length===0) { gameOver=true; setTimeout(resetBoard,400); return; }
+            let [r,c] = empty[Math.floor(Math.random()*empty.length)];
+            board[r][c] = currentPlayer;
+            let win = checkWin();
+            if(win) { winningCombo=win; gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
+            if(isDraw()) { gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
+            currentPlayer = currentPlayer==='X' ? 'O' : 'X';
+            drawBoard();
         }
-    } catch (e) {
-        console.log('Error fetching player data:', e);
-        // Keep existing messages (they already show "?/?" or "Fetching...")
-    }
-}
-
-// Fetch immediately, then every 30 seconds
-fetchPlayerData();
-setInterval(fetchPlayerData, 30000);
-
-    // ---------- RANDOM PHRASE GENERATOR & STORY (unchanged) ----------
-    const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
-    const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar"];
-    function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-    const storyDiv = document.getElementById('story');
-    const phraseDiv = document.getElementById('phrase');
-    const maxStoryLines = 15;
-    let storyLines = [];
-
-    function addStoryLine(line) {
-        storyLines.push(line);
-        if (storyLines.length > maxStoryLines) storyLines.shift();
-        storyDiv.innerHTML = storyLines.map(text => `<div>${text}</div>`).join('');
-        storyDiv.scrollTop = storyDiv.scrollHeight;
-    }
-
-    function updatePhrase() {
-        const phrase = `${randomItem(verbs)} ${randomItem(nouns)}...`;
-        phraseDiv.innerText = phrase;
-        addStoryLine(phrase);
-    }
-    updatePhrase();
-    setInterval(updatePhrase, 1500);
-
-    // ---------- AUTO TIC‑TAC‑TOE (unchanged) ----------
-    const canvas = document.getElementById('tictactoe');
-    const ctx = canvas.getContext('2d');
-    let board = [['','',''],['','',''],['','','']];
-    let currentPlayer = 'X', gameOver = false, winningCombo = null;
-
-    function drawBoard() {
-        ctx.clearRect(0,0,250,250);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 3;
-        const cellSize = 250/3;
-        for(let i=1;i<3;i++) {
-            ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,250); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(250,i*cellSize); ctx.stroke();
-        }
-        ctx.font = 'bold 50px "Courier New", monospace';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        for(let r=0;r<3;r++) for(let c=0;c<3;c++) {
-            if(board[r][c]==='') continue;
-            let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
-            ctx.fillStyle = board[r][c]==='X' ? '#ff5555' : '#55aaff';
-            ctx.fillText(board[r][c], x, y);
-        }
-        if(winningCombo) {
-            ctx.fillStyle = 'rgba(0,255,0,0.3)';
-            winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
-        }
-    }
-
-    function checkWin() {
-        const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
-        for(let line of lines) {
-            const [a,b,c] = line;
-            if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]) return line;
-        }
-        return null;
-    }
-
-    function isDraw() { return board.every(row => row.every(cell => cell!=='')); }
-    function resetBoard() { board = [['','',''],['','',''],['','','']]; currentPlayer='X'; gameOver=false; winningCombo=null; drawBoard(); }
-
-    function randomMove() {
-        if(gameOver) return;
-        let empty = [];
-        for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(board[r][c]==='') empty.push([r,c]);
-        if(empty.length===0) { gameOver=true; setTimeout(resetBoard,400); return; }
-        let [r,c] = empty[Math.floor(Math.random()*empty.length)];
-        board[r][c] = currentPlayer;
-        let win = checkWin();
-        if(win) { winningCombo=win; gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-        if(isDraw()) { gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-        currentPlayer = currentPlayer==='X' ? 'O' : 'X';
+        setInterval(randomMove, 250);
         drawBoard();
-    }
-    setInterval(randomMove, 250);
-    drawBoard();
 
-    // ---------- AUDIO AUTOPLAY (unchanged) ----------
-    window.addEventListener('load', function() {
-        const audio = document.getElementById('bgm');
-        audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
-    });
+        // ---------- AUDIO AUTOPLAY ----------
+        window.addEventListener('load', function() {
+            const audio = document.getElementById('bgm');
+            audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
+        });
 
-    // ---------- GAMEDETAILS FUNCTION (updated) ----------
-window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
-    function formatMapName(rawMap) {
-        let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
-        let withSpaces = withoutPrefix.replace(/_/g, ' ');
-        let parts = withSpaces.split(/(\d+)/);
-        let filtered = parts.filter(part => !/^\d+$/.test(part));
-        let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
-        return result || "unknown map";
-    }
+        // ---------- GAMEDETAILS FUNCTION ----------
+        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
+            function formatMapName(rawMap) {
+                let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
+                let withSpaces = withoutPrefix.replace(/_/g, ' ');
+                let parts = withSpaces.split(/(\d+)/);
+                let filtered = parts.filter(part => !/^\d+$/.test(part));
+                let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
+                return result || "unknown map";
+            }
 
-    let formattedMap = formatMapName(mapname);
-    tickerMessages[1] = `Map: ${formattedMap}`;
+            let formattedMap = formatMapName(mapname);
+            tickerMessages[1] = `Map: ${formattedMap}`;
 
-    if (currentMessageIndex === 1) {
-        tickerElement.textContent = tickerMessages[1];
-    }
-};
-</script>
+            if (currentMessageIndex === 1) {
+                tickerElement.textContent = tickerMessages[1];
+            }
+        };
+    </script>
 </body>
 </html>
