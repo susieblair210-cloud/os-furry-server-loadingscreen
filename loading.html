@@ -272,7 +272,7 @@
 
         // ---------- FETCH PLAYER DATA FROM SUPABASE ----------
 const supabaseUrl = 'https://your-project-url.supabase.co';
-const supabaseKey = 'your-anon-public-key';
+const supabaseKey = 'sb_publishable_tP8MzhYGklq_IM0SueM2Jw_WUrh3JHO';
 
 async function fetchPlayerData() {
     try {
@@ -406,26 +406,23 @@ setInterval(fetchPlayerData, 30000);
     });
 
     // ---------- GAMEDETAILS FUNCTION (updated) ----------
-    window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
-        function formatMapName(rawMap) {
-            let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
-            let withSpaces = withoutPrefix.replace(/_/g, ' ');
-            let parts = withSpaces.split(/(\d+)/);
-            let filtered = parts.filter(part => !/^\d+$/.test(part));
-            let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
-            return result || "unknown map";
-        }
+window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
+    function formatMapName(rawMap) {
+        let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
+        let withSpaces = withoutPrefix.replace(/_/g, ' ');
+        let parts = withSpaces.split(/(\d+)/);
+        let filtered = parts.filter(part => !/^\d+$/.test(part));
+        let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
+        return result || "unknown map";
+    }
 
-        let formattedMap = formatMapName(mapname);
-        let maxPlayers = maxplayers || "?";
+    let formattedMap = formatMapName(mapname);
+    tickerMessages[1] = `Map: ${formattedMap}`;
 
-        tickerMessages[1] = `Map: ${formattedMap}`;
-        tickerMessages[2] = `Max Players: ${maxPlayers}`;
-
-        if (currentMessageIndex === 1 || currentMessageIndex === 2) {
-            tickerElement.textContent = tickerMessages[currentMessageIndex];
-        }
-    };
+    if (currentMessageIndex === 1) {
+        tickerElement.textContent = tickerMessages[1];
+    }
+};
 </script>
 </body>
 </html>
