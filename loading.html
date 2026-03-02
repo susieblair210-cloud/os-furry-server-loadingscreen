@@ -2,6 +2,7 @@
 <html>
 <head>
     <style>
+        /* ---------- Base Styles (unchanged) ---------- */
         html, body {
             margin: 0;
             padding: 0;
@@ -37,6 +38,7 @@
             max-width: 800px;
             margin: 0 auto;
             z-index: 2;
+            transition: opacity 0.5s;
         }
         @media (min-width: 1000px) {
             .content-panel {
@@ -95,7 +97,7 @@
             display: none;
         }
 
-        /* ---------- TICKER STYLES ---------- */
+        /* ---------- Ticker (unchanged) ---------- */
         .ticker-container {
             position: fixed;
             top: 55px;
@@ -124,6 +126,66 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* ---------- Greeting Overlay ---------- */
+        .greeting-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 20, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 1s;
+            pointer-events: none;
+            color: #fff;
+            font-size: 48px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 20px #6a6;
+        }
+        .greeting-overlay.fade-out {
+            opacity: 0;
+        }
+
+        /* ---------- Info Mode Overlay ---------- */
+        .info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            color: #fff;
+            font-size: 28px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .info-overlay.active {
+            display: flex;
+        }
+        .info-content {
+            max-width: 800px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #6a6;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 0 30px #6a6;
+            line-height: 1.6;
+            font-size: 24px;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -131,14 +193,23 @@
 
     <audio id="bgm" loop autoplay>
         <source src="https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/in-waiting-for-miracle-438841.mp3" type="audio/mpeg">
-        Your browser does not support audio.
     </audio>
 
+    <!-- Greeting Overlay -->
+    <div class="greeting-overlay" id="greetingOverlay"></div>
+
+    <!-- Info Overlay -->
+    <div class="info-overlay" id="infoOverlay">
+        <div class="info-content" id="infoContent"></div>
+    </div>
+
+    <!-- Ticker -->
     <div class="ticker-container" id="tickerContainer">
         <div class="ticker-message" id="tickerMessage">✦ Os's Furry Server ✦</div>
     </div>
 
-    <div class="content-panel">
+    <!-- Main content panel -->
+    <div class="content-panel" id="mainPanel">
         <div class="loading-text">Os's Furry Server is loading...</div>
         <div class="current-phrase" id="phrase">initializing...</div>
         <div class="story-panel" id="story"></div>
@@ -148,7 +219,25 @@
     </div>
 
     <script>
-        // ---------- STAGGERED IMAGE LOADING ----------
+        // ---------- Time‑Based Greeting ----------
+        const greetingEl = document.getElementById('greetingOverlay');
+        const hour = new Date().getHours();
+        let greetingText = '';
+        if (hour >= 4 && hour < 11) greetingText = 'good morning floof!';
+        else if (hour >= 11 && hour < 14) greetingText = 'Having a nice lunch while you wait?';
+        else if (hour >= 14 && hour < 22) greetingText = 'good afternoon floof!';
+        else greetingText = 'Instead of sleeping, you\'re playing on here? Welcome floof!';
+        greetingEl.innerText = greetingText;
+
+        // Fade out after 4 seconds
+        setTimeout(() => {
+            greetingEl.classList.add('fade-out');
+            setTimeout(() => {
+                greetingEl.style.display = 'none';
+            }, 1000); // match transition time
+        }, 4000);
+
+        // ---------- Staggered Image Loading (modified for slower rotation in info mode) ----------
         const imageUrls = [
             "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
             "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
@@ -214,26 +303,30 @@
             }
         }
 
-        function rotateBackground() {
-            if (loadedImages.length === 0) return;
-            let newIndex;
-            if (loadedImages.length === 1) newIndex = 0;
-            else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
-            currentBgIndex = newIndex;
-            bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+        let bgRotationInterval;
+        function startBackgroundRotation(intervalTime) {
+            if (bgRotationInterval) clearInterval(bgRotationInterval);
+            bgRotationInterval = setInterval(() => {
+                if (loadedImages.length === 0) return;
+                let newIndex;
+                if (loadedImages.length === 1) newIndex = 0;
+                else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
+                currentBgIndex = newIndex;
+                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+            }, intervalTime);
         }
 
         (async function() {
             await loadInitialImage();
             preloadNextImages(3);
-            setInterval(rotateBackground, 5000);
+            startBackgroundRotation(5000); // normal speed
             setInterval(() => {
                 let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
                 if (unloaded > 0 && loadingQueue.length < 2) preloadNextImages(2);
             }, 10000);
         })();
 
-        // ---------- TICKER MESSAGE CYCLE ----------
+        // ---------- Ticker Message Cycle ----------
         let tickerMessages = [
             "✦ Os's Furry Server ✦",
             "Map: loading...",
@@ -253,9 +346,9 @@
         }
         setInterval(rotateTickerMessage, 7000);
 
-        // ---------- RANDOM PHRASE GENERATOR & STORY ----------
-        const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying", "hating", "loving", "respecting", "being rocked by", "comparing", "supernova-ing", "a long sentence is being eaten by"];
-        const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar", "you", "osbornd", "the entirety of science", "the world", "furries", "the femboys", "the trannies", "the straights", "the gays", "jimmies mom", "jimmy neutron", "steve from minecraft", "alex from minecraft", "fortnite", "minecraft", "Call Of Duty", "six siege but gay version", "Among Us", "LLMs", "Deepseek v3.2", "ChatGPT 5.2", "ChatGPT 4o", "ChatGPT", "Claude Sonnet", "Waluigi", "Mario", "Wario"];
+        // ---------- Random Phrase & Story ----------
+        const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying"];
+        const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar"];
         function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
         const storyDiv = document.getElementById('story');
@@ -278,7 +371,7 @@
         updatePhrase();
         setInterval(updatePhrase, 1500);
 
-        // ---------- AUTO TIC‑TAC‑TOE ----------
+        // ---------- Auto Tic‑Tac‑Toe ----------
         const canvas = document.getElementById('tictactoe');
         const ctx = canvas.getContext('2d');
         let board = [['','',''],['','',''],['','','']];
@@ -335,14 +428,59 @@
         setInterval(randomMove, 250);
         drawBoard();
 
-        // ---------- AUDIO AUTOPLAY ----------
+        // ---------- Audio Autoplay ----------
         window.addEventListener('load', function() {
             const audio = document.getElementById('bgm');
-            audio.play().catch(e => console.log('Autoplay failed – user interaction may be needed.'));
+            audio.play().catch(e => console.log('Autoplay failed'));
         });
 
-        // ---------- GAMEDETAILS FUNCTION ----------
+        // ---------- 2‑Minute Timer & Info Mode ----------
+        const mainPanel = document.getElementById('mainPanel');
+        const infoOverlay = document.getElementById('infoOverlay');
+        const infoContent = document.getElementById('infoContent');
+
+        const infoMessages = [
+            `Welcome to Os's Furry Server! Hope you've enjoyed the loading screens thus far.\n\nRule of thumb, these are not all of the rules, but here's some:\nIf someone says no and they mean it, stop what you are doing. Angering people for fun, especially, is not tolerated. Niceness and consent matter for everyone's fun. Unless you're a minge and you're gonna ignore this anyway, lol.\n\nI recommend staying low as you are (likely) new. I recommend chatting, or simply driving around when bored. You'll be surprised what conversations you can have!`,
+            `This server's general intended community:\nChill.\nToxicity to a minimum or else.\nReports are to be made for any complaints of anyone, including staff.`,
+            `This server is run by Osbornd29, hence "Os's".\nMost things on here are made with LLMs/AI. Osbornd29 simply made the layouts, optimizations used, and the idea of them. LLMs used for the actual syntax part of coding, just to be clear.\nThis server beta-testing alone spans 10+ months; expect some level of quality.`
+        ];
+
+        let infoIndex = 0;
+        let infoInterval;
+
+        function showInfoMode() {
+            // Stop normal background rotation and set slower rate
+            startBackgroundRotation(20000); // 20 seconds
+
+            // Hide main panel, show info overlay
+            mainPanel.style.opacity = '0';
+            setTimeout(() => {
+                mainPanel.style.display = 'none';
+            }, 500);
+            infoOverlay.classList.add('active');
+
+            // Start cycling info messages
+            infoContent.innerText = infoMessages[0];
+            infoInterval = setInterval(() => {
+                infoIndex = (infoIndex + 1) % infoMessages.length;
+                infoContent.innerText = infoMessages[infoIndex];
+            }, 25000);
+        }
+
+        // Start 2‑minute timer
+        const inactivityTimer = setTimeout(showInfoMode, 120000); // 2 minutes
+
+        // If GameDetails is called (player joins a server), cancel timer and info mode
         window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
+            clearTimeout(inactivityTimer);
+            if (infoInterval) clearInterval(infoInterval);
+            // Ensure main panel is visible
+            mainPanel.style.display = 'block';
+            mainPanel.style.opacity = '1';
+            infoOverlay.classList.remove('active');
+            // Restore normal background speed
+            startBackgroundRotation(5000);
+
             function formatMapName(rawMap) {
                 let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
                 let withSpaces = withoutPrefix.replace(/_/g, ' ');
@@ -354,7 +492,6 @@
 
             let formattedMap = formatMapName(mapname);
             tickerMessages[1] = `Map: ${formattedMap}`;
-
             if (currentMessageIndex === 1) {
                 tickerElement.textContent = tickerMessages[1];
             }
