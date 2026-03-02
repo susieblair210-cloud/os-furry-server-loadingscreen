@@ -271,12 +271,11 @@
     setInterval(rotateTickerMessage, 7000);
 
         // ---------- FETCH PLAYER DATA FROM SUPABASE ----------
-const supabaseUrl = 'https://your-project-url.supabase.co';
+const supabaseUrl = 'https://lzossmtjpntojnlhdohn.supabase.co';
 const supabaseKey = 'sb_publishable_tP8MzhYGklq_IM0SueM2Jw_WUrh3JHO';
 
 async function fetchPlayerData() {
     try {
-        // Get the most recent entry
         const response = await fetch(`${supabaseUrl}/rest/v1/server_data?order=timestamp.desc&limit=1`, {
             headers: {
                 'apikey': supabaseKey,
@@ -287,29 +286,42 @@ async function fetchPlayerData() {
 
         if (data && data.length > 0) {
             const latest = data[0];
-            const playerCount = latest.player_count || 0;
-            const maxPlayers = latest.max_players || 32;
-            const namesString = latest.player_names || '';
-            const playerNames = namesString ? namesString.split('|') : [];
-
-            // Update ticker messages
-            tickerMessages[2] = `👥 Players: ${playerCount}/${maxPlayers}`;
-
-            if (playerNames.length > 0) {
-                let namesList = playerNames.join(', ');
-                if (namesList.length > 45) namesList = namesList.substring(0, 42) + '...';
-                tickerMessages[3] = `📋 Online: ${namesList}`;
+            const now = Math.floor(Date.now() / 1000); // current time in seconds
+            const fiveMinutes = 5 * 60;
+            
+            // If data is older than 5 minutes, treat as stale
+            if (now - latest.timestamp > fiveMinutes) {
+                tickerMessages[2] = `👥 Players: No recent data`;
+                tickerMessages[3] = `📋 Online: (server starting?)`;
             } else {
-                tickerMessages[3] = `📋 Online: No players`;
-            }
+                const playerCount = latest.player_count || 0;
+                const maxPlayers = latest.max_players || 32;
+                const namesString = latest.player_names || '';
+                const playerNames = namesString ? namesString.split('|') : [];
 
-            // If the current message is one of these, refresh display
-            if (currentMessageIndex === 2 || currentMessageIndex === 3) {
-                tickerElement.textContent = tickerMessages[currentMessageIndex];
+                tickerMessages[2] = `👥 Players: ${playerCount}/${maxPlayers}`;
+
+                if (playerNames.length > 0) {
+                    let namesList = playerNames.join(', ');
+                    if (namesList.length > 45) namesList = namesList.substring(0, 42) + '...';
+                    tickerMessages[3] = `📋 Online: ${namesList}`;
+                } else {
+                    tickerMessages[3] = `📋 Online: No players`;
+                }
             }
+        } else {
+            // No data at all
+            tickerMessages[2] = `👥 Players: No data`;
+            tickerMessages[3] = `📋 Online: (server offline?)`;
+        }
+
+        // Update display if current message is one of these
+        if (currentMessageIndex === 2 || currentMessageIndex === 3) {
+            tickerElement.textContent = tickerMessages[currentMessageIndex];
         }
     } catch (e) {
         console.log('Error fetching player data:', e);
+        // Keep existing messages (they already show "?/?" or "Fetching...")
     }
 }
 
