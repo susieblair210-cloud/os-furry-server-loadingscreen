@@ -99,23 +99,23 @@
 
         /* ---------- Ticker (unchanged) ---------- */
         .ticker-container {
-            position: fixed;
-            top: 55px;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(3px);
-            border-top: 2px solid #6a6;
-            border-bottom: 2px solid #6a6;
-            color: #6a6;
-            font-size: 22px;
-            padding: 12px 0;
-            z-index: 10;
-            pointer-events: none;
-            text-align: center;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
+    position: fixed;
+    top: 55px;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    border-top: 2px solid #6a6;
+    border-bottom: 2px solid #6a6;
+    color: #6a6;
+    font-size: 22px;
+    padding: 12px 0;
+    z-index: 100; /* was 10 – now above info overlay */
+    pointer-events: none;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
         .ticker-message {
             display: inline-block;
             padding: 0 20px;
@@ -483,13 +483,22 @@
             startBackgroundRotation(5000);
 
             function formatMapName(rawMap) {
-                let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
-                let withSpaces = withoutPrefix.replace(/_/g, ' ');
-                let parts = withSpaces.split(/(\d+)/);
-                let filtered = parts.filter(part => !/^\d+$/.test(part));
-                let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
-                return result || "unknown map";
-            }
+    // Remove everything before first underscore
+    let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
+    // Replace underscores with spaces
+    let withSpaces = withoutPrefix.replace(/_/g, ' ');
+    // Split into parts by digits (keeping digits as separate parts)
+    let parts = withSpaces.split(/(\d+)/);
+    // Filter out purely numeric parts
+    let filtered = parts.filter(part => !/^\d+$/.test(part));
+    // Join with spaces
+    let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
+    
+    // NEW: Remove any single-letter words (like "v" from "futurepark v")
+    result = result.replace(/\b[a-zA-Z]\b\s*/g, '').trim();
+    
+    return result || "unknown map";
+}
 
             let formattedMap = formatMapName(mapname);
             tickerMessages[1] = `Map: ${formattedMap}`;
