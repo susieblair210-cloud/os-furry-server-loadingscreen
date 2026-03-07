@@ -471,7 +471,7 @@
         }
 
         // Start 2‑minute timer
-        const inactivityTimer = setTimeout(showInfoMode, 120000); // 2 minutes
+        const inactivityTimer = setTimeout(showInfoMode, 90000); // 1.5 minutes
 
         // If GameDetails is called (player joins a server), cancel timer and info mode
         window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
