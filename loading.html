@@ -328,81 +328,88 @@
             return -1; // all loaded or permanently failed
         }
 
-        // Attempt to load the next image in sequence
-        async function loadNextImage() {
-            if (isLoading) return;
-            const nextIdx = getNextUnloadedIndex();
-            if (nextIdx === -1) {
-                // All images either loaded or permanently failed
-                console.log("🎉 All images processed.");
-                if (loadTimer) clearInterval(loadTimer);
-                loadTimer = null;
-                return;
-            }
-
-            isLoading = true;
-            try {
-                await loadSingleImage(nextIdx);
-            } catch (err) {
-                // If it failed temporarily (not permanently), it will be retried later by the retry timer
-                console.log(`Image ${nextIdx} failed, will retry later.`);
-            } finally {
-                isLoading = false;
-                // After loading, schedule the next load (if any remain) after the interval
-                // We'll rely on the interval timer to call this again.
-            }
+        // Get a random unloaded (and not permanently failed) image index
+function getRandomUnloadedIndex() {
+    const unloadedIndices = [];
+    for (let i = 0; i < imageItems.length; i++) {
+        const item = imageItems[i];
+        if (!item.loaded && !(item.failed && item.retries >= MAX_RETRIES)) {
+            unloadedIndices.push(i);
         }
+    }
+    if (unloadedIndices.length === 0) return -1;
+    const randomPos = Math.floor(Math.random() * unloadedIndices.length);
+    return unloadedIndices[randomPos];
+}
 
-        // Start the staggered loading process
-        function startStaggeredLoading() {
-            // First, load a random initial image immediately (no delay)
-            const randomIndex = Math.floor(Math.random() * imageUrls.length);
-            loadSingleImage(randomIndex)
-                .then(() => {
-                    // Set background to this first loaded image
-                    if (loadedImages.length > 0) {
-                        currentBgIndex = loadedImages.length - 1;
-                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-                    }
-                    // Then start the interval to load remaining images one by one
-                    if (loadTimer) clearInterval(loadTimer);
-                    loadTimer = setInterval(() => {
-                        loadNextImage();
-                    }, LOAD_INTERVAL_MS);
-                })
-                .catch(() => {
-                    // If the first image fails, try another one immediately (fallback)
-                    console.warn("Initial image failed, trying another...");
-                    for (let i = 0; i < imageUrls.length; i++) {
-                        if (i !== randomIndex) {
-                            loadSingleImage(i)
-                                .then(() => {
-                                    if (loadedImages.length > 0) {
-                                        currentBgIndex = loadedImages.length - 1;
-                                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-                                    }
-                                    if (loadTimer) clearInterval(loadTimer);
-                                    loadTimer = setInterval(() => {
-                                        loadNextImage();
-                                    }, LOAD_INTERVAL_MS);
-                                })
-                                .catch(() => {});
-                            break;
-                        }
-                    }
-                });
+// Attempt to load the next random image
+async function loadNextImage() {
+    if (isLoading) return;
+    const nextIdx = getRandomUnloadedIndex();
+    if (nextIdx === -1) {
+        console.log("🎉 All images processed.");
+        if (loadTimer) clearInterval(loadTimer);
+        loadTimer = null;
+        return;
+    }
 
-            // Set up periodic retry for any images that failed temporarily
-            retryTimer = setInterval(() => {
-                // If there are unloaded images that are not permanently failed, attempt to load them
-                // This will load them out-of-order but it's okay; they'll be retried one by one.
-                const next = getNextUnloadedIndex();
-                if (next !== -1) {
-                    console.log(`🔄 Retrying unloaded image ${next}`);
-                    loadSingleImage(next).catch(() => {});
+    isLoading = true;
+    try {
+        await loadSingleImage(nextIdx);
+    } catch (err) {
+        console.log(`Image ${nextIdx} failed, will retry later.`);
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Start the staggered loading process (random order)
+function startStaggeredLoading() {
+    // First, load a random initial image immediately (no delay)
+    const randomIndex = Math.floor(Math.random() * imageUrls.length);
+    loadSingleImage(randomIndex)
+        .then(() => {
+            if (loadedImages.length > 0) {
+                currentBgIndex = loadedImages.length - 1;
+                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+            }
+            // Start interval to load next random images
+            if (loadTimer) clearInterval(loadTimer);
+            loadTimer = setInterval(() => {
+                loadNextImage();
+            }, LOAD_INTERVAL_MS);
+        })
+        .catch(() => {
+            // Fallback if initial fails, try another random one
+            console.warn("Initial image failed, trying another...");
+            for (let i = 0; i < imageUrls.length; i++) {
+                if (i !== randomIndex) {
+                    loadSingleImage(i)
+                        .then(() => {
+                            if (loadedImages.length > 0) {
+                                currentBgIndex = loadedImages.length - 1;
+                                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                            }
+                            if (loadTimer) clearInterval(loadTimer);
+                            loadTimer = setInterval(() => {
+                                loadNextImage();
+                            }, LOAD_INTERVAL_MS);
+                        })
+                        .catch(() => {});
+                    break;
                 }
-            }, RETRY_DELAY_MS);
+            }
+        });
+
+    // Periodic retry for any images that failed temporarily (also random)
+    retryTimer = setInterval(() => {
+        const next = getRandomUnloadedIndex();
+        if (next !== -1) {
+            console.log(`🔄 Retrying unloaded image ${next}`);
+            loadSingleImage(next).catch(() => {});
         }
+    }, RETRY_DELAY_MS);
+}
 
         // Background rotation: picks a random loaded image every interval
         function startBackgroundRotation(intervalTime) {
