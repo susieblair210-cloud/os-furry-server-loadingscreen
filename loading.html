@@ -238,21 +238,22 @@
         }, 4000);
 
         // ---------- STAGGERED SEQUENTIAL IMAGE LOADER (one at a time, spaced out) ----------
-        const imageUrls = [
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled25_20260301023849.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled27_20260302212710.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled28_20260307003558.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled29_20260307003814.jpg",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled84_20260318194944.png",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled85_20260320130433.png",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled86_20260320131018.png",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled87_20260320131054.png",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled88_20260320131347.png",
-            "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled89_20260320213506.png"
+        const baseURL = "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/";
+        const filenames = [
+            "Untitled23_20260130231227%20-%20Copy.jpg",
+            "Untitled24_20260130232531.jpg",
+            "Untitled25_20260301023849.jpg",
+            "Untitled27_20260302212710.jpg",
+            "Untitled28_20260307003558.jpg",
+            "Untitled29_20260307003814.jpg",
+            "Untitled84_20260318194944.png",
+            "Untitled85_20260320130433.png",
+            "Untitled86_20260320131018.png",
+            "Untitled87_20260320131054.png",
+            "Untitled88_20260320131347.png",
+            "Untitled89_20260320213506.png"
         ];
-
+        const imageUrls = filenames.map(f => baseURL + f);
         // Image state tracking
         let imageItems = imageUrls.map((url, idx) => ({
             url: url,
