@@ -234,10 +234,10 @@
             greetingEl.classList.add('fade-out');
             setTimeout(() => {
                 greetingEl.style.display = 'none';
-            }, 1000); // match transition time
+            }, 1000);
         }, 4000);
 
-        // ---------- Staggered Image Loading (modified for slower rotation in info mode) ----------
+        // ---------- ROBUST IMAGE LOADER (FIX: loads all images with retries) ----------
         const imageUrls = [
             "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled23_20260130231227%20-%20Copy.jpg",
             "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled24_20260130232531.jpg",
@@ -253,87 +253,192 @@
             "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/Untitled89_20260320213506.png"
         ];
 
-        let imageItems = imageUrls.map(url => ({ url, loaded: false, failed: false }));
-        let loadedImages = [];
-        let loadingQueue = [];
+        // Enhanced image items with retry counter
+        let imageItems = imageUrls.map((url, idx) => ({
+            url: url,
+            loaded: false,
+            failed: false,
+            retries: 0,
+            index: idx
+        }));
+
+        let loadedImages = [];      // array of successfully loaded image URLs
         let currentBgIndex = -1;
         const bgDiv = document.getElementById('bg');
+        let bgRotationInterval = null;
 
+        // Maximum retries per image
+        const MAX_RETRIES = 3;
+        // Concurrency limit: how many images load simultaneously
+        const CONCURRENCY = 3;
+        // Retry delay (ms) before retrying failed images
+        const RETRY_DELAY = 20000;
+
+        // Load a single image by index, returns Promise that resolves when image is ready
         function loadImage(index) {
             return new Promise((resolve, reject) => {
-                if (imageItems[index].loaded || imageItems[index].failed) return resolve();
+                const item = imageItems[index];
+                if (item.loaded) {
+                    resolve(item.url);
+                    return;
+                }
+                if (item.failed && item.retries >= MAX_RETRIES) {
+                    reject(new Error(`Image ${index} failed after ${MAX_RETRIES} retries`));
+                    return;
+                }
+
                 const img = new Image();
                 img.onload = () => {
-                    imageItems[index].loaded = true;
-                    loadedImages.push(imageUrls[index]);
-                    loadingQueue = loadingQueue.filter(i => i !== index);
-                    resolve();
+                    // Mark as loaded, update shared arrays
+                    if (!item.loaded) {
+                        item.loaded = true;
+                        item.failed = false;
+                        // Add to loadedImages array if not already present
+                        if (!loadedImages.includes(item.url)) {
+                            loadedImages.push(item.url);
+                        }
+                        console.log(`✅ Image ${index} loaded (total loaded: ${loadedImages.length})`);
+                    }
+                    resolve(item.url);
                 };
-                img.onerror = () => {
-                    imageItems[index].failed = true;
-                    loadingQueue = loadingQueue.filter(i => i !== index);
-                    reject();
+                img.onerror = (err) => {
+                    item.retries++;
+                    if (item.retries >= MAX_RETRIES) {
+                        item.failed = true;
+                        console.warn(`❌ Image ${index} permanently failed after ${MAX_RETRIES} attempts.`);
+                        reject(new Error(`Image ${index} failed permanently`));
+                    } else {
+                        // Still can retry later; not marked as failed permanently yet
+                        item.failed = false; // will be retried later
+                        console.log(`⚠️ Image ${index} failed (attempt ${item.retries}/${MAX_RETRIES}), will retry later.`);
+                        reject(new Error(`Image ${index} failed, retry later`));
+                    }
                 };
-                img.src = imageUrls[index];
+                img.src = item.url;
             });
         }
 
-        async function loadInitialImage() {
-            const randomIndex = Math.floor(Math.random() * imageUrls.length);
+        // Load all images with concurrency and auto-retry mechanism
+        let activeLoads = 0;
+        let loadQueue = [];
+        let retryTimeout = null;
+
+        // Function to process the queue (load next images up to concurrency limit)
+        function processQueue() {
+            while (activeLoads < CONCURRENCY && loadQueue.length > 0) {
+                const nextIndex = loadQueue.shift();
+                // Skip if already loaded or permanently failed
+                const item = imageItems[nextIndex];
+                if (item.loaded || (item.failed && item.retries >= MAX_RETRIES)) {
+                    continue;
+                }
+                activeLoads++;
+                loadImage(nextIndex)
+                    .catch(() => {
+                        // On temporary failure (or permanent) we don't requeue here; the retry mechanism will handle it
+                    })
+                    .finally(() => {
+                        activeLoads--;
+                        processQueue(); // continue loading other queued images
+                    });
+            }
+        }
+
+        // Add a batch of indices to the queue (avoid duplicates)
+        function enqueueIndices(indices) {
+            for (let idx of indices) {
+                const item = imageItems[idx];
+                // only enqueue if not loaded and not permanently failed, and not already in queue
+                if (!item.loaded && !(item.failed && item.retries >= MAX_RETRIES) && !loadQueue.includes(idx)) {
+                    loadQueue.push(idx);
+                }
+            }
+            processQueue();
+        }
+
+        // Retry all images that are not yet loaded and not permanently failed
+        function retryUnloadedImages() {
+            const unloadedIndices = [];
+            for (let i = 0; i < imageItems.length; i++) {
+                const item = imageItems[i];
+                if (!item.loaded && !(item.failed && item.retries >= MAX_RETRIES)) {
+                    unloadedIndices.push(i);
+                }
+            }
+            if (unloadedIndices.length > 0) {
+                console.log(`🔄 Retrying ${unloadedIndices.length} unloaded images...`);
+                enqueueIndices(unloadedIndices);
+            } else {
+                console.log("🎉 All images loaded successfully!");
+                if (retryTimeout) clearInterval(retryTimeout);
+                retryTimeout = null;
+            }
+        }
+
+        // Start initial loading: first load a random image for immediate background,
+        // then load the rest with concurrency, and set up periodic retry for stragglers
+        async function initializeImageLoading() {
+            // First, ensure at least one image loads quickly for background
+            const randomIdx = Math.floor(Math.random() * imageUrls.length);
             try {
-                await loadImage(randomIndex);
-                currentBgIndex = loadedImages.length - 1;
-                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                await loadImage(randomIdx);
+                // Set background to this image
+                if (loadedImages.length > 0) {
+                    currentBgIndex = loadedImages.length - 1;
+                    bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                }
             } catch (e) {
+                console.warn("Initial image load failed, trying fallback...");
+                // Fallback: try any image that might load
                 for (let i = 0; i < imageUrls.length; i++) {
-                    if (i !== randomIndex && !imageItems[i].loaded && !imageItems[i].failed) {
+                    if (i !== randomIdx) {
                         try {
                             await loadImage(i);
-                            currentBgIndex = loadedImages.length - 1;
-                            bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-                            break;
+                            if (loadedImages.length > 0) {
+                                currentBgIndex = loadedImages.length - 1;
+                                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                                break;
+                            }
                         } catch (err) { continue; }
                     }
                 }
             }
+
+            // Now queue up all remaining images to load in background
+            const allIndices = Array.from({ length: imageUrls.length }, (_, i) => i);
+            enqueueIndices(allIndices);
+
+            // Set up periodic retry for any images that failed temporarily
+            retryTimeout = setInterval(() => {
+                retryUnloadedImages();
+            }, RETRY_DELAY);
         }
 
-        async function preloadNextImages(count = 3) {
-            let loaded = 0;
-            let startIndex = Math.floor(Math.random() * imageUrls.length);
-            for (let offset = 0; offset < imageUrls.length; offset++) {
-                if (loaded >= count) break;
-                let idx = (startIndex + offset) % imageUrls.length;
-                if (!imageItems[idx].loaded && !imageItems[idx].failed && !loadingQueue.includes(idx)) {
-                    loadingQueue.push(idx);
-                    loadImage(idx).catch(() => {});
-                    loaded++;
-                }
-            }
-        }
-
-        let bgRotationInterval;
+        // Background rotation: picks a random loaded image every interval
         function startBackgroundRotation(intervalTime) {
             if (bgRotationInterval) clearInterval(bgRotationInterval);
             bgRotationInterval = setInterval(() => {
                 if (loadedImages.length === 0) return;
                 let newIndex;
-                if (loadedImages.length === 1) newIndex = 0;
-                else do { newIndex = Math.floor(Math.random() * loadedImages.length); } while (newIndex === currentBgIndex);
+                if (loadedImages.length === 1) {
+                    newIndex = 0;
+                } else {
+                    do {
+                        newIndex = Math.floor(Math.random() * loadedImages.length);
+                    } while (newIndex === currentBgIndex);
+                }
                 currentBgIndex = newIndex;
                 bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
             }, intervalTime);
         }
 
-        (async function() {
-            await loadInitialImage();
-            preloadNextImages(3);
+        // Kickstart loading process
+        initializeImageLoading().then(() => {
             startBackgroundRotation(5000); // normal speed
-            setInterval(() => {
-                let unloaded = imageItems.filter(item => !item.loaded && !item.failed).length;
-                if (unloaded > 0 && loadingQueue.length < 2) preloadNextImages(2);
-            }, 10000);
-        })();
+        }).catch(e => console.error("Loader init error", e));
+
+        // Optional: display loading progress (uncomment if needed, but not necessary)
+        // We'll just ensure all images eventually appear.
 
         // ---------- Ticker Message Cycle ----------
         let tickerMessages = [
@@ -458,8 +563,8 @@
         let infoInterval;
 
         function showInfoMode() {
-            // Stop normal background rotation and set slower rate
-            startBackgroundRotation(20000); // 20 seconds
+            // Slow down background rotation to 20 seconds during info mode
+            startBackgroundRotation(20000);
 
             // Hide main panel, show info overlay
             mainPanel.style.opacity = '0';
@@ -470,43 +575,42 @@
 
             // Start cycling info messages
             infoContent.innerText = infoMessages[0];
+            if (infoInterval) clearInterval(infoInterval);
             infoInterval = setInterval(() => {
                 infoIndex = (infoIndex + 1) % infoMessages.length;
                 infoContent.innerText = infoMessages[infoIndex];
             }, 25000);
         }
 
-        // Start 2‑minute timer
-        const inactivityTimer = setTimeout(showInfoMode, 90000); // 1.5 minutes
+        // Start 1 minute timer
+        let inactivityTimer = setTimeout(showInfoMode, 60000);
 
-        // If GameDetails is called (player joins a server), cancel timer and info mode
+        // GameDetails override (called when player joins a server)
         window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
             clearTimeout(inactivityTimer);
             if (infoInterval) clearInterval(infoInterval);
-            // Ensure main panel is visible
+            // Restore main panel
             mainPanel.style.display = 'block';
             mainPanel.style.opacity = '1';
             infoOverlay.classList.remove('active');
-            // Restore normal background speed
+            // Restore normal background rotation speed
             startBackgroundRotation(5000);
 
             function formatMapName(rawMap) {
-    // Remove everything before first underscore
-    let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
-    // Replace underscores with spaces
-    let withSpaces = withoutPrefix.replace(/_/g, ' ');
-    // Split into parts by digits (keeping digits as separate parts)
-    let parts = withSpaces.split(/(\d+)/);
-    // Filter out purely numeric parts
-    let filtered = parts.filter(part => !/^\d+$/.test(part));
-    // Join with spaces
-    let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
-    
-    // NEW: Remove any single-letter words (like "v" from "futurepark v")
-    result = result.replace(/\b[a-zA-Z]\b\s*/g, '').trim();
-    
-    return result || "unknown map";
-}
+                // Remove everything before first underscore
+                let withoutPrefix = rawMap.includes('_') ? rawMap.substring(rawMap.indexOf('_') + 1) : rawMap;
+                // Replace underscores with spaces
+                let withSpaces = withoutPrefix.replace(/_/g, ' ');
+                // Split into parts by digits (keeping digits as separate parts)
+                let parts = withSpaces.split(/(\d+)/);
+                // Filter out purely numeric parts
+                let filtered = parts.filter(part => !/^\d+$/.test(part));
+                // Join with spaces
+                let result = filtered.join(' ').replace(/\s+/g, ' ').trim();
+                // Remove any single-letter words (like "v" from "futurepark v")
+                result = result.replace(/\b[a-zA-Z]\b\s*/g, '').trim();
+                return result || "unknown map";
+            }
 
             let formattedMap = formatMapName(mapname);
             tickerMessages[1] = `Map: ${formattedMap}`;
