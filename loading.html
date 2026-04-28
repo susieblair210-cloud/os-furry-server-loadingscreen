@@ -2,7 +2,7 @@
 <html>
 <head>
     <style>
-        /* ---------- Base Styles (unchanged) ---------- */
+        /* ---------- Base Styles ---------- */
         html, body {
             margin: 0;
             padding: 0;
@@ -25,88 +25,113 @@
             transition: background-image 0.5s ease-in-out;
             z-index: 1;
         }
+
+        /* ---------- Bottom-Center Panel (20% smaller, 60% transparent) ---------- */
         .content-panel {
             position: absolute;
-            bottom: 30px;
-            left: 30px;
-            right: 30px;
-            background: rgba(10, 10, 10, 0.75);
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            background: rgba(10, 10, 10, 0.40);
+            /* 60% transparent = 40% opacity */
             border-radius: 16px;
-            padding: 20px 30px;
+            padding: 16px 24px;
             backdrop-filter: blur(5px);
-            border: 1px solid #6a6;
-            max-width: 800px;
+            border: 1px solid rgba(106, 170, 106, 0.40);
+            /* 60% transparent border */
+            max-width: 640px;
+            /* 20% smaller: 800px → 640px */
             margin: 0 auto;
             z-index: 2;
             transition: opacity 0.5s;
         }
-        @media (min-width: 1000px) {
+        @media (min-width: 800px) {
             .content-panel {
                 left: 50%;
                 transform: translateX(-50%);
                 right: auto;
-                width: 800px;
+                width: 640px;
+                /* 20% smaller: 800px → 640px */
             }
         }
+
         .loading-text {
-            font-size: 20px;
+            font-size: 16px;
+            /* 20% smaller: 20px → 16px */
             color: #8a8;
             text-transform: uppercase;
             letter-spacing: 4px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .current-phrase {
-            font-size: 32px;
+            font-size: 26px;
+            /* ~20% smaller: 32px → 26px */
             font-weight: bold;
             color: #ffaa00;
             text-shadow: 0 0 10px #ffaa00;
-            min-height: 70px;
-            margin-bottom: 15px;
+            min-height: 56px;
+            /* 20% smaller: 70px → 56px */
+            margin-bottom: 12px;
         }
+
+        /* ---------- Story Panel (40% transparent) ---------- */
         .story-panel {
-            background: #111;
-            border: 2px solid #6a6;
+            background: rgba(17, 17, 17, 0.60);
+            /* 40% transparent = 60% opacity */
+            border: 2px solid rgba(106, 170, 106, 0.60);
+            /* 40% transparent border */
             border-radius: 8px;
-            padding: 15px;
-            height: 200px;
+            padding: 12px;
+            /* 20% smaller: 15px → 12px */
+            height: 160px;
+            /* 20% smaller: 200px → 160px */
             overflow-y: auto;
             text-align: left;
-            font-size: 15px;
+            font-size: 12px;
+            /* 20% smaller: 15px → 12px */
             color: #ccc;
             line-height: 1.5;
             scroll-behavior: smooth;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .story-panel div {
-            margin-bottom: 6px;
-            border-left: 3px solid #6a6;
+            margin-bottom: 5px;
+            border-left: 3px solid rgba(106, 170, 106, 0.60);
             padding-left: 10px;
         }
+
         .board-container {
             display: flex;
             justify-content: center;
         }
+
+        /* ---------- Tic-Tac-Toe Canvas (40% transparent) ---------- */
         canvas {
-            background: #1a1a1a;
-            border: 2px solid #6a6;
+            background: rgba(26, 26, 26, 0.60);
+            /* 40% transparent = 60% opacity */
+            border: 2px solid rgba(106, 170, 106, 0.60);
+            /* 40% transparent border */
             border-radius: 8px;
-            width: 250px;
-            height: 250px;
+            width: 200px;
+            /* 20% smaller: 250px → 200px */
+            height: 200px;
+            /* 20% smaller: 250px → 200px */
         }
         audio {
             display: none;
         }
 
-        /* ---------- Ticker ---------- */
+        /* ---------- Ticker (50% transparent) ---------- */
         .ticker-container {
             position: fixed;
             top: 55px;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.50);
+            /* 50% transparent = 50% opacity */
             backdrop-filter: blur(3px);
-            border-top: 2px solid #6a6;
-            border-bottom: 2px solid #6a6;
+            border-top: 2px solid rgba(106, 170, 106, 0.50);
+            border-bottom: 2px solid rgba(106, 170, 106, 0.50);
             color: #6a6;
             font-size: 22px;
             padding: 12px 0;
@@ -114,7 +139,7 @@
             pointer-events: none;
             text-align: center;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
         .ticker-message {
             display: inline-block;
@@ -203,18 +228,18 @@
         <div class="info-content" id="infoContent"></div>
     </div>
 
-    <!-- Ticker -->
+    <!-- Ticker (50% transparent banner on top) -->
     <div class="ticker-container" id="tickerContainer">
         <div class="ticker-message" id="tickerMessage">✦ Os's Furry Server ✦</div>
     </div>
 
-    <!-- Main content panel -->
+    <!-- Main content panel (20% smaller, 60% transparent) -->
     <div class="content-panel" id="mainPanel">
         <div class="loading-text">Os's Furry Server is loading...</div>
         <div class="current-phrase" id="phrase">initializing...</div>
         <div class="story-panel" id="story"></div>
         <div class="board-container">
-            <canvas id="tictactoe" width="250" height="250"></canvas>
+            <canvas id="tictactoe" width="200" height="200"></canvas>
         </div>
     </div>
 
@@ -270,19 +295,19 @@
             index: idx
         }));
 
-        let loadedImages = [];        // URLs of successfully loaded images
+        let loadedImages = []; // URLs of successfully loaded images
         let currentBgIndex = -1;
         const bgDiv = document.getElementById('bg');
         let bgRotationInterval = null;
 
         // Configuration
-        const LOAD_INTERVAL_MS = 5000;   // load one new image every 3 seconds
+        const LOAD_INTERVAL_MS = 5000; // load one new image every 5 seconds
         const MAX_RETRIES = 3;
-        const RETRY_DELAY_MS = 20000;    // if an image fails, retry it after 20 seconds
+        const RETRY_DELAY_MS = 20000; // if an image fails, retry it after 20 seconds
 
         let loadTimer = null;
         let retryTimer = null;
-        let isLoading = false;            // prevent overlapping loads
+        let isLoading = false; // prevent overlapping loads
 
         // Load a single image by index; returns a promise that resolves if loaded, rejects if permanently failed
         function loadSingleImage(index) {
@@ -305,7 +330,9 @@
                         if (!loadedImages.includes(item.url)) {
                             loadedImages.push(item.url);
                         }
-                        console.log(`✅ Loaded image ${index} (${loadedImages.length}/${imageUrls.length})`);
+                        console.log(
+                            `✅ Loaded image ${index} (${loadedImages.length}/${imageUrls.length})`
+                            );
                     }
                     resolve(item.url);
                 };
@@ -324,99 +351,89 @@
             });
         }
 
-        // Get the next unloaded (and not permanently failed) image index
-        function getNextUnloadedIndex() {
+        // Get a random unloaded (and not permanently failed) image index
+        function getRandomUnloadedIndex() {
+            const unloadedIndices = [];
             for (let i = 0; i < imageItems.length; i++) {
                 const item = imageItems[i];
                 if (!item.loaded && !(item.failed && item.retries >= MAX_RETRIES)) {
-                    return i;
+                    unloadedIndices.push(i);
                 }
             }
-            return -1; // all loaded or permanently failed
+            if (unloadedIndices.length === 0) return -1;
+            const randomPos = Math.floor(Math.random() * unloadedIndices.length);
+            return unloadedIndices[randomPos];
         }
 
-        // Get a random unloaded (and not permanently failed) image index
-function getRandomUnloadedIndex() {
-    const unloadedIndices = [];
-    for (let i = 0; i < imageItems.length; i++) {
-        const item = imageItems[i];
-        if (!item.loaded && !(item.failed && item.retries >= MAX_RETRIES)) {
-            unloadedIndices.push(i);
-        }
-    }
-    if (unloadedIndices.length === 0) return -1;
-    const randomPos = Math.floor(Math.random() * unloadedIndices.length);
-    return unloadedIndices[randomPos];
-}
-
-// Attempt to load the next random image
-async function loadNextImage() {
-    if (isLoading) return;
-    const nextIdx = getRandomUnloadedIndex();
-    if (nextIdx === -1) {
-        console.log("🎉 All images processed.");
-        if (loadTimer) clearInterval(loadTimer);
-        loadTimer = null;
-        return;
-    }
-
-    isLoading = true;
-    try {
-        await loadSingleImage(nextIdx);
-    } catch (err) {
-        console.log(`Image ${nextIdx} failed, will retry later.`);
-    } finally {
-        isLoading = false;
-    }
-}
-
-// Start the staggered loading process (random order)
-function startStaggeredLoading() {
-    // First, load a random initial image immediately (no delay)
-    const randomIndex = Math.floor(Math.random() * imageUrls.length);
-    loadSingleImage(randomIndex)
-        .then(() => {
-            if (loadedImages.length > 0) {
-                currentBgIndex = loadedImages.length - 1;
-                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+        // Attempt to load the next random image
+        async function loadNextImage() {
+            if (isLoading) return;
+            const nextIdx = getRandomUnloadedIndex();
+            if (nextIdx === -1) {
+                console.log("🎉 All images processed.");
+                if (loadTimer) clearInterval(loadTimer);
+                loadTimer = null;
+                return;
             }
-            // Start interval to load next random images
-            if (loadTimer) clearInterval(loadTimer);
-            loadTimer = setInterval(() => {
-                loadNextImage();
-            }, LOAD_INTERVAL_MS);
-        })
-        .catch(() => {
-            // Fallback if initial fails, try another random one
-            console.warn("Initial image failed, trying another...");
-            for (let i = 0; i < imageUrls.length; i++) {
-                if (i !== randomIndex) {
-                    loadSingleImage(i)
-                        .then(() => {
-                            if (loadedImages.length > 0) {
-                                currentBgIndex = loadedImages.length - 1;
-                                bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
-                            }
-                            if (loadTimer) clearInterval(loadTimer);
-                            loadTimer = setInterval(() => {
-                                loadNextImage();
-                            }, LOAD_INTERVAL_MS);
-                        })
-                        .catch(() => {});
-                    break;
+
+            isLoading = true;
+            try {
+                await loadSingleImage(nextIdx);
+            } catch (err) {
+                console.log(`Image ${nextIdx} failed, will retry later.`);
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Start the staggered loading process (random order)
+        function startStaggeredLoading() {
+            // First, load a random initial image immediately (no delay)
+            const randomIndex = Math.floor(Math.random() * imageUrls.length);
+            loadSingleImage(randomIndex)
+                .then(() => {
+                    if (loadedImages.length > 0) {
+                        currentBgIndex = loadedImages.length - 1;
+                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
+                    }
+                    // Start interval to load next random images
+                    if (loadTimer) clearInterval(loadTimer);
+                    loadTimer = setInterval(() => {
+                        loadNextImage();
+                    }, LOAD_INTERVAL_MS);
+                })
+                .catch(() => {
+                    // Fallback if initial fails, try another random one
+                    console.warn("Initial image failed, trying another...");
+                    for (let i = 0; i < imageUrls.length; i++) {
+                        if (i !== randomIndex) {
+                            loadSingleImage(i)
+                                .then(() => {
+                                    if (loadedImages.length > 0) {
+                                        currentBgIndex = loadedImages.length - 1;
+                                        bgDiv.style.backgroundImage =
+                                            `url('${loadedImages[currentBgIndex]}')`;
+                                    }
+                                    if (loadTimer) clearInterval(loadTimer);
+                                    loadTimer = setInterval(() => {
+                                        loadNextImage();
+                                    }, LOAD_INTERVAL_MS);
+                                })
+                                .catch(() => {});
+                            break;
+                        }
+                    }
+                });
+
+            // Periodic retry for any images that failed temporarily (also random)
+            retryTimer = setInterval(() => {
+                const next = getRandomUnloadedIndex();
+                if (next !== -1) {
+                    console.log(`🔄 Retrying unloaded image ${next}`);
+                    loadSingleImage(next).catch(() => {});
                 }
-            }
-        });
-
-    // Periodic retry for any images that failed temporarily (also random)
-    retryTimer = setInterval(() => {
-        const next = getRandomUnloadedIndex();
-        if (next !== -1) {
-            console.log(`🔄 Retrying unloaded image ${next}`);
-            loadSingleImage(next).catch(() => {});
+            }, RETRY_DELAY_MS);
         }
-    }, RETRY_DELAY_MS);
-}
 
         // Background rotation: picks a random loaded image every interval
         function startBackgroundRotation(intervalTime) {
@@ -461,8 +478,22 @@ function startStaggeredLoading() {
         setInterval(rotateTickerMessage, 7000);
 
         // ---------- Random Phrase & Story ----------
-        const verbs = ["lifting","carrying","throwing","eating","petting","running over","dancing with","photographing","feeding","tickling","worshipping","fighting","marrying","betraying", "hating", "loving", "respecting", "being rocked by", "comparing", "supernova-ing", "a long sentence is being eaten by", "mating", "kissing", "licking", "liking", "doing", "done", "undoing", "reversing", "removing", "making", "realisticly making", "teaching", "Carl Wheezer loves", "Jimmy Neutron loves", "Local scientist is actually just"];
-        const nouns = ["your mom","carl weezer","a fursuit","G-Man","the combine","a toilet","Gordon Freeman","a lambda logo","the gravity gun","a headcrab","a barnacle","the admin","a prop","the void","your sanity","a sock","a crowbar", "you", "osbornd", "the entirety of science", "the world", "furries", "the femboys", "the trannies", "the straights", "the gays", "jimmies mom", "jimmy neutron", "steve from minecraft", "alex from minecraft", "fortnite", "minecraft", "Call Of Duty", "six siege but gay version", "Among Us", "LLMs", "Deepseek v3.2", "ChatGPT 5.2", "ChatGPT 4o", "ChatGPT", "Claude Sonnet", "Waluigi", "Mario", "Wario", "the bed", "a seat"];
+        const verbs = ["lifting", "carrying", "throwing", "eating", "petting", "running over", "dancing with",
+            "photographing", "feeding", "tickling", "worshipping", "fighting", "marrying", "betraying", "hating",
+            "loving", "respecting", "being rocked by", "comparing", "supernova-ing", "a long sentence is being eaten by",
+            "mating", "kissing", "licking", "liking", "doing", "done", "undoing", "reversing", "removing", "making",
+            "realisticly making", "teaching", "Carl Wheezer loves", "Jimmy Neutron loves",
+            "Local scientist is actually just"
+        ];
+        const nouns = ["your mom", "carl weezer", "a fursuit", "G-Man", "the combine", "a toilet", "Gordon Freeman",
+            "a lambda logo", "the gravity gun", "a headcrab", "a barnacle", "the admin", "a prop", "the void",
+            "your sanity", "a sock", "a crowbar", "you", "osbornd", "the entirety of science", "the world", "furries",
+            "the femboys", "the trannies", "the straights", "the gays", "jimmies mom", "jimmy neutron",
+            "steve from minecraft", "alex from minecraft", "fortnite", "minecraft", "Call Of Duty",
+            "six siege but gay version", "Among Us", "LLMs", "Deepseek v3.2", "ChatGPT 5.2", "ChatGPT 4o", "ChatGPT",
+            "Claude Sonnet", "Waluigi", "Mario", "Wario", "the bed", "a seat"
+        ];
+
         function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
         const storyDiv = document.getElementById('story');
@@ -485,58 +516,137 @@ function startStaggeredLoading() {
         updatePhrase();
         setInterval(updatePhrase, 1500);
 
-        // ---------- Auto Tic‑Tac‑Toe ----------
+        // ---------- Auto Tic‑Tac‑Toe (canvas 200×200, 40% transparent) ----------
         const canvas = document.getElementById('tictactoe');
         const ctx = canvas.getContext('2d');
-        let board = [['','',''],['','',''],['','','']];
-        let currentPlayer = 'X', gameOver = false, winningCombo = null;
+        const CANVAS_SIZE = 200; // 20% smaller: was 250
+        const cellSize = CANVAS_SIZE / 3;
+        let board = [
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', '']
+        ];
+        let currentPlayer = 'X',
+            gameOver = false,
+            winningCombo = null;
 
         function drawBoard() {
-            ctx.clearRect(0,0,250,250);
-            ctx.strokeStyle = '#333';
+            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            ctx.strokeStyle = 'rgba(51, 51, 51, 0.60)';
             ctx.lineWidth = 3;
-            const cellSize = 250/3;
-            for(let i=1;i<3;i++) {
-                ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,250); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(250,i*cellSize); ctx.stroke();
+            for (let i = 1; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, CANVAS_SIZE);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(CANVAS_SIZE, i * cellSize);
+                ctx.stroke();
             }
-            ctx.font = 'bold 50px "Courier New", monospace';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            for(let r=0;r<3;r++) for(let c=0;c<3;c++) {
-                if(board[r][c]==='') continue;
-                let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
-                ctx.fillStyle = board[r][c]==='X' ? '#ff5555' : '#55aaff';
-                ctx.fillText(board[r][c], x, y);
-            }
-            if(winningCombo) {
+            ctx.font = 'bold 40px "Courier New", monospace'; // scaled down from 50px
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let r = 0; r < 3; r++)
+                for (let c = 0; c < 3; c++) {
+                    if (board[r][c] === '') continue;
+                    let x = c * cellSize + cellSize / 2,
+                        y = r * cellSize + cellSize / 2;
+                    ctx.fillStyle = board[r][c] === 'X' ? '#ff5555' : '#55aaff';
+                    ctx.fillText(board[r][c], x, y);
+                }
+            if (winningCombo) {
                 ctx.fillStyle = 'rgba(0,255,0,0.3)';
-                winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
+                winningCombo.forEach(([r, c]) => ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize));
             }
         }
 
         function checkWin() {
-            const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
-            for(let line of lines) {
-                const [a,b,c] = line;
-                if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]) return line;
+            const lines = [
+                [
+                    [0, 0],
+                    [0, 1],
+                    [0, 2]
+                ],
+                [
+                    [1, 0],
+                    [1, 1],
+                    [1, 2]
+                ],
+                [
+                    [2, 0],
+                    [2, 1],
+                    [2, 2]
+                ],
+                [
+                    [0, 0],
+                    [1, 0],
+                    [2, 0]
+                ],
+                [
+                    [0, 1],
+                    [1, 1],
+                    [2, 1]
+                ],
+                [
+                    [0, 2],
+                    [1, 2],
+                    [2, 2]
+                ],
+                [
+                    [0, 0],
+                    [1, 1],
+                    [2, 2]
+                ],
+                [
+                    [0, 2],
+                    [1, 1],
+                    [2, 0]
+                ]
+            ];
+            for (let line of lines) {
+                const [a, b, c] = line;
+                if (board[a[0]][a[1]] && board[a[0]][a[1]] === board[b[0]][b[1]] && board[a[0]][a[1]] === board[c[0]][
+                        c[1]
+                    ])
+                    return line;
             }
             return null;
         }
 
-        function isDraw() { return board.every(row => row.every(cell => cell!=='')); }
-        function resetBoard() { board = [['','',''],['','',''],['','','']]; currentPlayer='X'; gameOver=false; winningCombo=null; drawBoard(); }
+        function isDraw() { return board.every(row => row.every(cell => cell !== '')); }
+
+        function resetBoard() {
+            board = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ];
+            currentPlayer = 'X';
+            gameOver = false;
+            winningCombo = null;
+            drawBoard();
+        }
 
         function randomMove() {
-            if(gameOver) return;
+            if (gameOver) return;
             let empty = [];
-            for(let r=0;r<3;r++) for(let c=0;c<3;c++) if(board[r][c]==='') empty.push([r,c]);
-            if(empty.length===0) { gameOver=true; setTimeout(resetBoard,400); return; }
-            let [r,c] = empty[Math.floor(Math.random()*empty.length)];
+            for (let r = 0; r < 3; r++)
+                for (let c = 0; c < 3; c++)
+                    if (board[r][c] === '') empty.push([r, c]);
+            if (empty.length === 0) { gameOver = true;
+                setTimeout(resetBoard, 400); return; }
+            let [r, c] = empty[Math.floor(Math.random() * empty.length)];
             board[r][c] = currentPlayer;
             let win = checkWin();
-            if(win) { winningCombo=win; gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-            if(isDraw()) { gameOver=true; drawBoard(); setTimeout(resetBoard,400); return; }
-            currentPlayer = currentPlayer==='X' ? 'O' : 'X';
+            if (win) { winningCombo = win;
+                gameOver = true;
+                drawBoard();
+                setTimeout(resetBoard, 400); return; }
+            if (isDraw()) { gameOver = true;
+                drawBoard();
+                setTimeout(resetBoard, 400); return; }
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             drawBoard();
         }
         setInterval(randomMove, 250);
@@ -586,7 +696,8 @@ function startStaggeredLoading() {
         let inactivityTimer = setTimeout(showInfoMode, 90000);
 
         // GameDetails override (called when player joins a server)
-        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
+        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang,
+            gamemodeNice) {
             clearTimeout(inactivityTimer);
             if (infoInterval) clearInterval(infoInterval);
             // Restore main panel
