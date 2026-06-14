@@ -33,14 +33,11 @@
             left: 24px;
             right: 24px;
             background: rgba(10, 10, 10, 0.40);
-            /* 60% transparent = 40% opacity */
             border-radius: 16px;
             padding: 16px 24px;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(106, 170, 106, 0.40);
-            /* 60% transparent border */
             max-width: 640px;
-            /* 20% smaller: 800px → 640px */
             margin: 0 auto;
             z-index: 2;
             transition: opacity 0.5s;
@@ -51,13 +48,11 @@
                 transform: translateX(-50%);
                 right: auto;
                 width: 640px;
-                /* 20% smaller: 800px → 640px */
             }
         }
 
         .loading-text {
             font-size: 16px;
-            /* 20% smaller: 20px → 16px */
             color: #8a8;
             text-transform: uppercase;
             letter-spacing: 4px;
@@ -65,30 +60,23 @@
         }
         .current-phrase {
             font-size: 26px;
-            /* ~20% smaller: 32px → 26px */
             font-weight: bold;
             color: #ffaa00;
             text-shadow: 0 0 10px #ffaa00;
             min-height: 56px;
-            /* 20% smaller: 70px → 56px */
             margin-bottom: 12px;
         }
 
         /* ---------- Story Panel (40% transparent) ---------- */
         .story-panel {
             background: rgba(17, 17, 17, 0.60);
-            /* 40% transparent = 60% opacity */
             border: 2px solid rgba(106, 170, 106, 0.60);
-            /* 40% transparent border */
             border-radius: 8px;
             padding: 12px;
-            /* 20% smaller: 15px → 12px */
             height: 160px;
-            /* 20% smaller: 200px → 160px */
             overflow-y: auto;
             text-align: left;
             font-size: 12px;
-            /* 20% smaller: 15px → 12px */
             color: #ccc;
             line-height: 1.5;
             scroll-behavior: smooth;
@@ -108,14 +96,10 @@
         /* ---------- Tic-Tac-Toe Canvas (40% transparent) ---------- */
         canvas {
             background: rgba(26, 26, 26, 0.60);
-            /* 40% transparent = 60% opacity */
             border: 2px solid rgba(106, 170, 106, 0.60);
-            /* 40% transparent border */
             border-radius: 8px;
             width: 200px;
-            /* 20% smaller: 250px → 200px */
             height: 200px;
-            /* 20% smaller: 250px → 200px */
         }
         audio {
             display: none;
@@ -128,7 +112,6 @@
             left: 0;
             width: 100%;
             background: rgba(0, 0, 0, 0.50);
-            /* 50% transparent = 50% opacity */
             backdrop-filter: blur(3px);
             border-top: 2px solid rgba(106, 170, 106, 0.50);
             border-bottom: 2px solid rgba(106, 170, 106, 0.50);
@@ -211,6 +194,56 @@
             font-size: 24px;
             white-space: pre-wrap;
         }
+
+        /* ---------- MINI MAP ICON STYLES (enlarged ~30%, no text, moved down 90px) ---------- */
+        .map-mini-icon {
+            position: fixed;
+            top: 180px;          /* WAS 90px → +90px = 180px */
+            right: 28px;
+            width: 145px;
+            height: 145px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 18px;
+            border: 3px solid rgba(106, 170, 106, 0.9);
+            box-shadow: 0 0 16px rgba(106, 170, 106, 0.5);
+            backdrop-filter: blur(3px);
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            pointer-events: none;
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-mini-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .map-mini-icon.visible {
+            opacity: 1;
+        }
+        /* Responsive adjustments - maintain +90px shift */
+        @media (max-width: 640px) {
+            .map-mini-icon {
+                width: 110px;
+                height: 110px;
+                top: 165px;      /* was 75px → +90px = 165px */
+                right: 16px;
+                border-radius: 14px;
+                border-width: 2px;
+            }
+        }
+        @media (max-width: 480px) {
+            .map-mini-icon {
+                width: 90px;
+                height: 90px;
+                top: 160px;      /* was 70px → +90px = 160px */
+                right: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -233,7 +266,7 @@
         <div class="ticker-message" id="tickerMessage">✦ Os's Furry Server ✦</div>
     </div>
 
-    <!-- Main content panel (20% smaller, 60% transparent) -->
+    <!-- Main content panel -->
     <div class="content-panel" id="mainPanel">
         <div class="loading-text">Os's Furry Server is loading...</div>
         <div class="current-phrase" id="phrase">initializing...</div>
@@ -241,6 +274,11 @@
         <div class="board-container">
             <canvas id="tictactoe" width="200" height="200"></canvas>
         </div>
+    </div>
+
+    <!-- MINI MAP ICON ELEMENT -->
+    <div id="mapMiniIcon" class="map-mini-icon">
+        <img id="mapMiniImg" src="" alt="map preview">
     </div>
 
     <script>
@@ -254,7 +292,6 @@
         else greetingText = 'Instead of sleeping, you\'re playing on here? Welcome floof!';
         greetingEl.innerText = greetingText;
 
-        // Fade out after 4 seconds
         setTimeout(() => {
             greetingEl.classList.add('fade-out');
             setTimeout(() => {
@@ -262,7 +299,7 @@
             }, 1000);
         }, 4000);
 
-        // ---------- STAGGERED SEQUENTIAL IMAGE LOADER (one at a time, spaced out) ----------
+        // ---------- STAGGERED SEQUENTIAL IMAGE LOADER ----------
         const baseURL = "https://raw.githubusercontent.com/susieblair210-cloud/os-furry-server-loadingscreen/main/";
 const filenames = [
     "Untitled23_20260130231227%20-%20Copy.jpg",
@@ -309,7 +346,6 @@ const filenames = [
     "Untitled51_20260614113959.jpg"
 ];
         const imageUrls = filenames.map(f => baseURL + f);
-        // Image state tracking
         let imageItems = imageUrls.map((url, idx) => ({
             url: url,
             loaded: false,
@@ -318,21 +354,19 @@ const filenames = [
             index: idx
         }));
 
-        let loadedImages = []; // URLs of successfully loaded images
+        let loadedImages = [];
         let currentBgIndex = -1;
         const bgDiv = document.getElementById('bg');
         let bgRotationInterval = null;
 
-        // Configuration
-        const LOAD_INTERVAL_MS = 5000; // load one new image every 5 seconds
+        const LOAD_INTERVAL_MS = 5000;
         const MAX_RETRIES = 3;
-        const RETRY_DELAY_MS = 20000; // if an image fails, retry it after 20 seconds
+        const RETRY_DELAY_MS = 20000;
 
         let loadTimer = null;
         let retryTimer = null;
-        let isLoading = false; // prevent overlapping loads
+        let isLoading = false;
 
-        // Load a single image by index; returns a promise that resolves if loaded, rejects if permanently failed
         function loadSingleImage(index) {
             return new Promise((resolve, reject) => {
                 const item = imageItems[index];
@@ -353,20 +387,15 @@ const filenames = [
                         if (!loadedImages.includes(item.url)) {
                             loadedImages.push(item.url);
                         }
-                        console.log(
-                            `✅ Loaded image ${index} (${loadedImages.length}/${imageUrls.length})`
-                            );
                     }
                     resolve(item.url);
                 };
                 img.onerror = () => {
                     item.retries++;
-                    console.warn(`⚠️ Image ${index} failed (attempt ${item.retries}/${MAX_RETRIES})`);
                     if (item.retries >= MAX_RETRIES) {
                         item.failed = true;
                         reject(new Error(`Image ${index} failed permanently`));
                     } else {
-                        // Not permanently failed, can be retried later
                         reject(new Error(`Image ${index} failed, will retry`));
                     }
                 };
@@ -374,7 +403,6 @@ const filenames = [
             });
         }
 
-        // Get a random unloaded (and not permanently failed) image index
         function getRandomUnloadedIndex() {
             const unloadedIndices = [];
             for (let i = 0; i < imageItems.length; i++) {
@@ -384,34 +412,27 @@ const filenames = [
                 }
             }
             if (unloadedIndices.length === 0) return -1;
-            const randomPos = Math.floor(Math.random() * unloadedIndices.length);
-            return unloadedIndices[randomPos];
+            return unloadedIndices[Math.floor(Math.random() * unloadedIndices.length)];
         }
 
-        // Attempt to load the next random image
         async function loadNextImage() {
             if (isLoading) return;
             const nextIdx = getRandomUnloadedIndex();
             if (nextIdx === -1) {
-                console.log("🎉 All images processed.");
                 if (loadTimer) clearInterval(loadTimer);
                 loadTimer = null;
                 return;
             }
-
             isLoading = true;
             try {
                 await loadSingleImage(nextIdx);
-            } catch (err) {
-                console.log(`Image ${nextIdx} failed, will retry later.`);
-            } finally {
+            } catch (err) {}
+            finally {
                 isLoading = false;
             }
         }
 
-        // Start the staggered loading process (random order)
         function startStaggeredLoading() {
-            // First, load a random initial image immediately (no delay)
             const randomIndex = Math.floor(Math.random() * imageUrls.length);
             loadSingleImage(randomIndex)
                 .then(() => {
@@ -419,76 +440,54 @@ const filenames = [
                         currentBgIndex = loadedImages.length - 1;
                         bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
                     }
-                    // Start interval to load next random images
                     if (loadTimer) clearInterval(loadTimer);
-                    loadTimer = setInterval(() => {
-                        loadNextImage();
-                    }, LOAD_INTERVAL_MS);
+                    loadTimer = setInterval(() => loadNextImage(), LOAD_INTERVAL_MS);
                 })
                 .catch(() => {
-                    // Fallback if initial fails, try another random one
-                    console.warn("Initial image failed, trying another...");
                     for (let i = 0; i < imageUrls.length; i++) {
                         if (i !== randomIndex) {
                             loadSingleImage(i)
                                 .then(() => {
                                     if (loadedImages.length > 0) {
                                         currentBgIndex = loadedImages.length - 1;
-                                        bgDiv.style.backgroundImage =
-                                            `url('${loadedImages[currentBgIndex]}')`;
+                                        bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
                                     }
                                     if (loadTimer) clearInterval(loadTimer);
-                                    loadTimer = setInterval(() => {
-                                        loadNextImage();
-                                    }, LOAD_INTERVAL_MS);
+                                    loadTimer = setInterval(() => loadNextImage(), LOAD_INTERVAL_MS);
                                 })
                                 .catch(() => {});
                             break;
                         }
                     }
                 });
-
-            // Periodic retry for any images that failed temporarily (also random)
             retryTimer = setInterval(() => {
                 const next = getRandomUnloadedIndex();
-                if (next !== -1) {
-                    console.log(`🔄 Retrying unloaded image ${next}`);
-                    loadSingleImage(next).catch(() => {});
-                }
+                if (next !== -1) loadSingleImage(next).catch(() => {});
             }, RETRY_DELAY_MS);
         }
 
-        // Background rotation: picks a random loaded image every interval
         function startBackgroundRotation(intervalTime) {
             if (bgRotationInterval) clearInterval(bgRotationInterval);
             bgRotationInterval = setInterval(() => {
                 if (loadedImages.length === 0) return;
                 let newIndex;
-                if (loadedImages.length === 1) {
-                    newIndex = 0;
-                } else {
-                    do {
-                        newIndex = Math.floor(Math.random() * loadedImages.length);
-                    } while (newIndex === currentBgIndex);
+                if (loadedImages.length === 1) newIndex = 0;
+                else {
+                    do { newIndex = Math.floor(Math.random() * loadedImages.length); }
+                    while (newIndex === currentBgIndex);
                 }
                 currentBgIndex = newIndex;
                 bgDiv.style.backgroundImage = `url('${loadedImages[currentBgIndex]}')`;
             }, intervalTime);
         }
 
-        // Start everything
         startStaggeredLoading();
-        startBackgroundRotation(5000); // normal speed
+        startBackgroundRotation(5000);
 
-        // ---------- Ticker Message Cycle ----------
-        let tickerMessages = [
-            "✦ Os's Furry Server ✦",
-            "Map: loading...",
-            "Gamemode: sandbox + ttt/mafia"
-        ];
+        // ---------- Ticker ----------
+        let tickerMessages = ["✦ Os's Furry Server ✦", "Map: loading...", "Gamemode: sandbox + ttt/mafia"];
         let currentMessageIndex = 0;
         const tickerElement = document.getElementById('tickerMessage');
-
         function rotateTickerMessage() {
             if (!tickerElement) return;
             tickerElement.style.opacity = '0';
@@ -506,16 +505,14 @@ const filenames = [
             "loving", "respecting", "being rocked by", "comparing", "supernova-ing", "a long sentence is being eaten by",
             "mating", "kissing", "licking", "liking", "doing", "done", "undoing", "reversing", "removing", "making",
             "realisticly making", "teaching", "Carl Wheezer loves", "Jimmy Neutron loves", "crapping", "romantizing", "sillying", "downloading", "lolipopping", "deering", "mommying", "daddying", "adding", "importing", "excorsizing", "exersizing", "exporting", "mooning", "bouncing", "referbrisihing",
-            "Local scientist is actually just"
-        ];
+            "Local scientist is actually just"];
         const nouns = ["your mom", "carl weezer", "a fursuit", "G-Man", "the combine", "a toilet", "Gordon Freeman",
             "a lambda logo", "the gravity gun", "a headcrab", "a barnacle", "the admin", "a prop", "the void",
             "your sanity", "a sock", "a crowbar", "you", "osbornd", "the entirety of science", "the world", "furries",
             "the femboys", "the trannies", "the straights", "the gays", "jimmies mom", "jimmy neutron",
             "steve from minecraft", "alex from minecraft", "fortnite", "minecraft", "Call Of Duty",
             "six siege but gay version", "Among Us", "LLMs", "Deepseek v3.2", "ChatGPT 5.2", "ChatGPT 4o", "ChatGPT",
-            "Claude Sonnet", "Waluigi", "Mario", "Wario", "the bed", "a seat", "walmart", "walmart bag", "sand", "a helper", "a member", "a user", "battlebit", "battlebyte", "caseoh", "Dream", "GeorgeNotFound", "Muye", "scrapman", "kan", "Garry Newman", "Gmod", "Ms. Kleiner", "nikado avacado", "youtube", "roblox", "Muck", "Twitch", "twitter", "x", "Donald Trump", "Joe Biden", "Obama", "your laptop"
-        ];
+            "Claude Sonnet", "Waluigi", "Mario", "Wario", "the bed", "a seat", "walmart", "walmart bag", "sand", "a helper", "a member", "a user", "battlebit", "battlebyte", "caseoh", "Dream", "GeorgeNotFound", "Muye", "scrapman", "kan", "Garry Newman", "Gmod", "Ms. Kleiner", "nikado avacado", "youtube", "roblox", "Muck", "Twitch", "twitter", "x", "Donald Trump", "Joe Biden", "Obama", "your laptop"];
 
         function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -539,100 +536,43 @@ const filenames = [
         updatePhrase();
         setInterval(updatePhrase, 1500);
 
-        // ---------- Auto Tic‑Tac‑Toe (canvas 200×200, 40% transparent) ----------
+        // ---------- Auto Tic‑Tac‑Toe ----------
         const canvas = document.getElementById('tictactoe');
         const ctx = canvas.getContext('2d');
-        const CANVAS_SIZE = 200; // 20% smaller: was 250
+        const CANVAS_SIZE = 200;
         const cellSize = CANVAS_SIZE / 3;
-        let board = [
-            ['', '', ''],
-            ['', '', ''],
-            ['', '', '']
-        ];
-        let currentPlayer = 'X',
-            gameOver = false,
-            winningCombo = null;
+        let board = [['','',''],['','',''],['','','']];
+        let currentPlayer = 'X', gameOver = false, winningCombo = null;
 
         function drawBoard() {
             ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-            ctx.strokeStyle = 'rgba(51, 51, 51, 0.60)';
+            ctx.strokeStyle = 'rgba(51,51,51,0.60)';
             ctx.lineWidth = 3;
             for (let i = 1; i < 3; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * cellSize, 0);
-                ctx.lineTo(i * cellSize, CANVAS_SIZE);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i * cellSize);
-                ctx.lineTo(CANVAS_SIZE, i * cellSize);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i*cellSize,0); ctx.lineTo(i*cellSize,CANVAS_SIZE); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0,i*cellSize); ctx.lineTo(CANVAS_SIZE,i*cellSize); ctx.stroke();
             }
-            ctx.font = 'bold 40px "Courier New", monospace'; // scaled down from 50px
+            ctx.font = 'bold 40px "Courier New", monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            for (let r = 0; r < 3; r++)
-                for (let c = 0; c < 3; c++) {
+            for (let r=0; r<3; r++)
+                for (let c=0; c<3; c++) {
                     if (board[r][c] === '') continue;
-                    let x = c * cellSize + cellSize / 2,
-                        y = r * cellSize + cellSize / 2;
+                    let x = c*cellSize+cellSize/2, y = r*cellSize+cellSize/2;
                     ctx.fillStyle = board[r][c] === 'X' ? '#ff5555' : '#55aaff';
                     ctx.fillText(board[r][c], x, y);
                 }
             if (winningCombo) {
                 ctx.fillStyle = 'rgba(0,255,0,0.3)';
-                winningCombo.forEach(([r, c]) => ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize));
+                winningCombo.forEach(([r,c]) => ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize));
             }
         }
 
         function checkWin() {
-            const lines = [
-                [
-                    [0, 0],
-                    [0, 1],
-                    [0, 2]
-                ],
-                [
-                    [1, 0],
-                    [1, 1],
-                    [1, 2]
-                ],
-                [
-                    [2, 0],
-                    [2, 1],
-                    [2, 2]
-                ],
-                [
-                    [0, 0],
-                    [1, 0],
-                    [2, 0]
-                ],
-                [
-                    [0, 1],
-                    [1, 1],
-                    [2, 1]
-                ],
-                [
-                    [0, 2],
-                    [1, 2],
-                    [2, 2]
-                ],
-                [
-                    [0, 0],
-                    [1, 1],
-                    [2, 2]
-                ],
-                [
-                    [0, 2],
-                    [1, 1],
-                    [2, 0]
-                ]
-            ];
+            const lines = [[[0,0],[0,1],[0,2]],[[1,0],[1,1],[1,2]],[[2,0],[2,1],[2,2]],[[0,0],[1,0],[2,0]],[[0,1],[1,1],[2,1]],[[0,2],[1,2],[2,2]],[[0,0],[1,1],[2,2]],[[0,2],[1,1],[2,0]]];
             for (let line of lines) {
-                const [a, b, c] = line;
-                if (board[a[0]][a[1]] && board[a[0]][a[1]] === board[b[0]][b[1]] && board[a[0]][a[1]] === board[c[0]][
-                        c[1]
-                    ])
-                    return line;
+                const [a,b,c] = line;
+                if (board[a[0]][a[1]] && board[a[0]][a[1]] === board[b[0]][b[1]] && board[a[0]][a[1]] === board[c[0]][c[1]]) return line;
             }
             return null;
         }
@@ -640,11 +580,7 @@ const filenames = [
         function isDraw() { return board.every(row => row.every(cell => cell !== '')); }
 
         function resetBoard() {
-            board = [
-                ['', '', ''],
-                ['', '', ''],
-                ['', '', '']
-            ];
+            board = [['','',''],['','',''],['','','']];
             currentPlayer = 'X';
             gameOver = false;
             winningCombo = null;
@@ -654,59 +590,86 @@ const filenames = [
         function randomMove() {
             if (gameOver) return;
             let empty = [];
-            for (let r = 0; r < 3; r++)
-                for (let c = 0; c < 3; c++)
-                    if (board[r][c] === '') empty.push([r, c]);
-            if (empty.length === 0) { gameOver = true;
-                setTimeout(resetBoard, 400); return; }
-            let [r, c] = empty[Math.floor(Math.random() * empty.length)];
+            for (let r=0; r<3; r++)
+                for (let c=0; c<3; c++)
+                    if (board[r][c] === '') empty.push([r,c]);
+            if (empty.length === 0) { gameOver = true; setTimeout(resetBoard,400); return; }
+            let [r,c] = empty[Math.floor(Math.random() * empty.length)];
             board[r][c] = currentPlayer;
             let win = checkWin();
-            if (win) { winningCombo = win;
-                gameOver = true;
-                drawBoard();
-                setTimeout(resetBoard, 400); return; }
-            if (isDraw()) { gameOver = true;
-                drawBoard();
-                setTimeout(resetBoard, 400); return; }
+            if (win) { winningCombo = win; gameOver = true; drawBoard(); setTimeout(resetBoard,400); return; }
+            if (isDraw()) { gameOver = true; drawBoard(); setTimeout(resetBoard,400); return; }
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             drawBoard();
         }
         setInterval(randomMove, 250);
         drawBoard();
 
-        // ---------- Audio Autoplay ----------
+        // ---------- Audio ----------
         window.addEventListener('load', function() {
-            const audio = document.getElementById('bgm');
-            audio.play().catch(e => console.log('Autoplay failed'));
+            document.getElementById('bgm').play().catch(e => console.log('Autoplay failed'));
         });
 
-        // ---------- 2‑Minute Timer & Info Mode ----------
+        // ========== MINI-MAP FADE LOGIC ==========
+        const mapIconContainer = document.getElementById('mapMiniIcon');
+        const mapIconImg = document.getElementById('mapMiniImg');
+        let mapFadeInTimer = null;
+        let mapFadeOutTimer = null;
+
+        mapIconContainer.classList.remove('visible');
+        mapIconContainer.style.opacity = '0';
+
+        function resetMapIconTimers() {
+            if (mapFadeInTimer) { clearTimeout(mapFadeInTimer); mapFadeInTimer = null; }
+            if (mapFadeOutTimer) { clearTimeout(mapFadeOutTimer); mapFadeOutTimer = null; }
+        }
+
+        function permanentlyHideMiniIcon() {
+            if (mapIconContainer) {
+                mapIconContainer.classList.remove('visible');
+                mapIconContainer.style.opacity = '0';
+            }
+        }
+
+        // MODIFIED: fade-in delay changed from 10000ms to 1000ms (1 seconds)
+        function triggerMapIconSequence() {
+            resetMapIconTimers();
+            mapIconContainer.classList.remove('visible');
+            mapIconContainer.style.opacity = '0';
+            
+            // Fade in after 3 seconds (was 10)
+            mapFadeInTimer = setTimeout(() => {
+                if (mapIconContainer && mapIconImg.src && mapIconImg.src !== "" && !mapIconImg.src.includes("invalid_map")) {
+                    mapIconContainer.classList.add('visible');
+                    mapIconContainer.style.opacity = '1';
+                } else {
+                    return;
+                }
+                // fade out after 15 seconds visible (unchanged)
+                mapFadeOutTimer = setTimeout(() => {
+                    permanentlyHideMiniIcon();
+                    resetMapIconTimers();
+                }, 15000);
+            }, 1000);   // <--- changed from 10000 to 1000
+        }
+
+        // 2‑Minute Timer & Info Mode
         const mainPanel = document.getElementById('mainPanel');
         const infoOverlay = document.getElementById('infoOverlay');
         const infoContent = document.getElementById('infoContent');
-
         const infoMessages = [
             `Welcome to Os's Furry Server! Hope you've enjoyed the loading screens thus far.\n\nRule of thumb, these are not all of the rules, but here's some:\nIf someone says no and they mean it, stop what you are doing. Angering people for fun, especially, is not tolerated. Niceness and consent matter for everyone's fun. Unless you're a minge and you're gonna ignore this anyway, lol.\n\nI recommend staying low as you are (likely) new. I recommend chatting, or simply driving around when bored. You'll be surprised what conversations you can have!`,
             `This server's general intended community:\nChill.\nKindness is most important.\nReports are to be made for any complaints of anyone, including staff.\n We are open to criticism.`,
             `This server is run by Osbornd29, hence "Os's".\nMost things on here are made with LLMs/AI. Osbornd29 simply made the layouts, optimizations used, and the idea of them. LLMs used for the actual syntax part of coding, just to be clear.\nThis server beta-testing alone spans 10+ months; expect some level of quality.`
         ];
-
         let infoIndex = 0;
         let infoInterval;
 
         function showInfoMode() {
-            // Slow down background rotation to 20 seconds during info mode
             startBackgroundRotation(20000);
-
-            // Hide main panel, show info overlay
             mainPanel.style.opacity = '0';
-            setTimeout(() => {
-                mainPanel.style.display = 'none';
-            }, 500);
+            setTimeout(() => { mainPanel.style.display = 'none'; }, 500);
             infoOverlay.classList.add('active');
-
-            // Start cycling info messages
             infoContent.innerText = infoMessages[0];
             if (infoInterval) clearInterval(infoInterval);
             infoInterval = setInterval(() => {
@@ -715,19 +678,15 @@ const filenames = [
             }, 25000);
         }
 
-        // Start 1.5 minute timer
         let inactivityTimer = setTimeout(showInfoMode, 90000);
 
-        // GameDetails override (called when player joins a server)
-        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang,
-            gamemodeNice) {
+        // ------------- GameDetails Override -------------
+        window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, lang, gamemodeNice) {
             clearTimeout(inactivityTimer);
             if (infoInterval) clearInterval(infoInterval);
-            // Restore main panel
             mainPanel.style.display = 'block';
             mainPanel.style.opacity = '1';
             infoOverlay.classList.remove('active');
-            // Restore normal background rotation speed
             startBackgroundRotation(5000);
 
             function formatMapName(rawMap) {
@@ -742,8 +701,23 @@ const filenames = [
 
             let formattedMap = formatMapName(mapname);
             tickerMessages[1] = `Map: ${formattedMap}`;
-            if (currentMessageIndex === 1) {
-                tickerElement.textContent = tickerMessages[1];
+            if (currentMessageIndex === 1) tickerElement.textContent = tickerMessages[1];
+
+            const mapAssetUrl = "asset://mapimage/" + mapname;
+            mapIconImg.src = mapAssetUrl;
+            resetMapIconTimers();
+            permanentlyHideMiniIcon();
+            
+            mapIconImg.onerror = () => {
+                resetMapIconTimers();
+                permanentlyHideMiniIcon();
+            };
+            mapIconImg.onload = () => {
+                resetMapIconTimers();
+                triggerMapIconSequence();
+            };
+            if (mapIconImg.complete && mapIconImg.naturalHeight !== 0) {
+                triggerMapIconSequence();
             }
         };
     </script>
